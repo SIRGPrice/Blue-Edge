@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 BlueEdge contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
@@ -48,5 +48,4 @@ interface RagStore {
   /** Whether this store currently holds any chunks. Cheap call. */
   suspend fun hasAnyContent(): Boolean
 }
-
 

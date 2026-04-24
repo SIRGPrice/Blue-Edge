@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.modelitem
-
-import com.google.ai.edge.gallery.R
+
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.MODEL_INFO_ICON_SIZE
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.ModelDownloadStatus
@@ -81,7 +81,7 @@ fun ModelNameAndStatus(
         modifier = Modifier.padding(bottom = 6.dp),
       ) {
         Icon(
-          R.drawable.ic_s_ta_r_24px,
+          Icons.Filled.Star,
           tint = Color(0xFFFCC934),
           contentDescription = null,
           modifier = Modifier.size(18.dp),
@@ -145,7 +145,7 @@ fun ModelNameAndStatus(
               sizeLabel =
                 "${downloadStatus.receivedBytes.humanReadableSize(extraDecimalForGbAndAbove = true)} of ${totalSize.humanReadableSize()}"
               if (downloadStatus.bytesPerSecond > 0) {
-                sizeLabel = "$sizeLabel Â· ${downloadStatus.bytesPerSecond.humanReadableSize()} / s"
+                sizeLabel = "$sizeLabel · ${downloadStatus.bytesPerSecond.humanReadableSize()} / s"
                 // if (downloadStatus.remainingMs >= 0) {
                 //   sizeLabel =
                 //     "$sizeLabel\n${downloadStatus.remainingMs.formatToHourMinSecond()} left"
@@ -190,5 +190,3 @@ fun ModelNameAndStatus(
 
   }
 }
-
-

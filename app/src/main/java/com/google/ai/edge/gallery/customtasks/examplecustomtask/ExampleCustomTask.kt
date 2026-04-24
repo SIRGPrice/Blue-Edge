@@ -1,6 +1,3 @@
-﻿package com.google.ai.edge.gallery.customtasks.examplecustomtask
-
-import com.google.ai.edge.gallery.R
 /*
  * Copyright 2025 Google LLC
  *
@@ -17,6 +14,7 @@ import com.google.ai.edge.gallery.R
  * limitations under the License.
  */
 
+package com.google.ai.edge.gallery.customtasks.examplecustomtask
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
@@ -65,7 +63,7 @@ class ExampleCustomTask @Inject constructor() : CustomTask {
       id = "example_custom_task",
       label = "Model Viewer",
       category = CategoryInfo(id = "example", label = "Example"),
-      icon = R.drawable.ic_t_ex_tf_ie_ld_s_24px,
+      icon = Icons.Outlined.TextFields,
       description =
         "This example task demonstrates a custom task that reads and displays the content of a " +
           "model file (with text content for demonstration purpose). The \"models\" listed " +
@@ -170,5 +168,3 @@ class ExampleCustomTask @Inject constructor() : CustomTask {
     ExampleCustomTaskScreen(modelManagerViewModel = modelManagerViewModel)
   }
 }
-
-

@@ -300,8 +300,7 @@ fun GalleryNavHost(
                     }
                   },
                   onAppSettingsClicked = {
-                    // The button now opens an internal dropdown listing the documents
-                    // stored in persistent memory (handled inside ModelPageAppBar).
+                    android.widget.Toast.makeText(context, "App settings coming soon.", android.widget.Toast.LENGTH_SHORT).show()
                   },
                 )
             )
@@ -340,16 +339,16 @@ fun GalleryNavHost(
                     setAppBarControlsDisabled = { disableAppBarControls = it },
                     setTopBarVisible = { hideTopBar = !it },
                     setCustomNavigateUpCallback = { customNavigateUpCallback = it },
-                    setCustomLeadingAction = { customLeadingAction = it },
-                    performNavigateUp = {
-                      if (customNavigateUpCallback != null) {
-                        customNavigateUpCallback?.invoke()
-                      } else {
-                        enableModelListAnimation = false
-                        lastNavigatedModelName = ""
-                        navController.navigateUp()
-                      }
-                    },
+                      setCustomLeadingAction = { customLeadingAction = it },
+                      performNavigateUp = {
+                        if (customNavigateUpCallback != null) {
+                          customNavigateUpCallback?.invoke()
+                        } else {
+                          enableModelListAnimation = false
+                          lastNavigatedModelName = ""
+                          navController.navigateUp()
+                        }
+                      },
                   )
               )
             }

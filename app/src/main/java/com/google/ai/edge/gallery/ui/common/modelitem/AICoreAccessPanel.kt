@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.modelitem
-
-import com.google.ai.edge.gallery.R
+
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +35,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import com.google.ai.edge.gallery.R
+
 /**
  * Composable function to display an access panel for AICore models when they require user action
  * (e.g., setup steps, permissions, or dealing with a failed access state).
@@ -77,4 +78,3 @@ fun AICoreAccessPanel() {
     }
   }
 }
-

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -29,7 +29,7 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.reactive.MessagingApps
 /**
  * Capability-driven permission helper. A [Capability] declares the runtime permissions it needs
  * in [Capability.requiredPermissions]; some tasks additionally require **special access** screens
- * â€” the Notification Listener toggle, the Accessibility toggle, or the default-SMS handler â€”
+ * — the Notification Listener toggle, the Accessibility toggle, or the default-SMS handler —
  * which cannot be granted through the standard runtime permission prompt and must instead be
  * directed to the appropriate system settings activity.
  *
@@ -117,7 +117,7 @@ fun rememberCapabilityPermissionRequester(
 private fun isGranted(ctx: Context, perm: String): Boolean =
   ContextCompat.checkSelfPermission(ctx, perm) == PackageManager.PERMISSION_GRANTED
 
-/** Permissions that cannot be requested at runtime â€” they are granted via settings screens. */
+/** Permissions that cannot be requested at runtime — they are granted via settings screens. */
 private val SPECIAL_ACCESS_PERMISSIONS = setOf(
   Manifest.permission.BIND_NOTIFICATION_LISTENER_SERVICE,
   Manifest.permission.BIND_ACCESSIBILITY_SERVICE,
@@ -131,7 +131,7 @@ private data class SpecialAccessRequirement(
 
 /** Compute the first pending special-access requirement for [cap], if any. */
 private fun specialAccessFor(cap: Capability, ctx: Context): SpecialAccessRequirement? {
-  // Notification listener â€” required by every trigger.* / action.reply.* except pure SMS.
+  // Notification listener — required by every trigger.* / action.reply.* except pure SMS.
   val needsListener = Manifest.permission.BIND_NOTIFICATION_LISTENER_SERVICE in cap.requiredPermissions
   if (needsListener && !isNotificationListenerEnabled(ctx)) {
     return SpecialAccessRequirement(
@@ -141,12 +141,12 @@ private fun specialAccessFor(cap: Capability, ctx: Context): SpecialAccessRequir
       intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),
     )
   }
-  // Accessibility â€” required by the action.reply.{whatsapp,telegram,discord} automation fallback.
+  // Accessibility — required by the action.reply.{whatsapp,telegram,discord} automation fallback.
   val needsAccessibility = cap.id in ACCESSIBILITY_CAPABILITIES
   if (needsAccessibility && !AssistantAccessibilityService.isEnabled(ctx)) {
     return SpecialAccessRequirement(
       title = "Servicio de accesibilidad",
-      message = "Para responder automÃ¡ticamente cuando la notificaciÃ³n haya caducado, " +
+      message = "Para responder automáticamente cuando la notificación haya caducado, " +
         "StoCATstic necesita el servicio de accesibilidad. Se usa solo para enviar los " +
         "mensajes que configures en tus flujos.",
       intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS),
@@ -169,5 +169,4 @@ private fun isNotificationListenerEnabled(ctx: Context): Boolean {
     "/com.google.ai.edge.gallery.customtasks.stocatstic.reactive.AssistantNotificationListenerService"
   return enabled.split(':').any { it.equals(component, ignoreCase = true) }
 }
-
 

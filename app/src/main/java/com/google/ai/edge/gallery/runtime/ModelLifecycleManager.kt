@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -41,14 +41,14 @@ sealed class ModelState {
  * Central coordinator of the single on-device LLM across the chat page ("pantalla principal") and
  * StoCATstic workflows. Implements exclusive ownership with reference counting for workflows:
  *
- *  â€¢ `onChatEntered(model)`    â€” chat takes ownership (load happens via ModelManagerViewModel).
- *  â€¢ `onChatLeft()`            â€” chat releases ownership (model is NOT unloaded here).
- *  â€¢ `acquireWorkflow()`       â€” a workflow with AI nodes started.
- *  â€¢ `releaseWorkflow()`       â€” a workflow with AI nodes finished.
- *  â€¢ `onAppBackgrounded()`     â€” if no workflows need the model, unload; otherwise start
+ *  • `onChatEntered(model)`    — chat takes ownership (load happens via ModelManagerViewModel).
+ *  • `onChatLeft()`            — chat releases ownership (model is NOT unloaded here).
+ *  • `acquireWorkflow()`       — a workflow with AI nodes started.
+ *  • `releaseWorkflow()`       — a workflow with AI nodes finished.
+ *  • `onAppBackgrounded()`     — if no workflows need the model, unload; otherwise start
  *                                 keep-alive service and mark WORKFLOW as owner.
- *  â€¢ `onAppForegrounded()`     â€” stop keep-alive service.
- *  â€¢ `awaitReady()`            â€” suspend until the model is Loaded; auto-loads for workflows.
+ *  • `onAppForegrounded()`     — stop keep-alive service.
+ *  • `awaitReady()`            — suspend until the model is Loaded; auto-loads for workflows.
  */
 @Singleton
 class ModelLifecycleManager @Inject constructor(
@@ -233,5 +233,4 @@ class ModelLifecycleManager @Inject constructor(
     } catch (_: Throwable) { /* ignore */ }
   }
 }
-
 

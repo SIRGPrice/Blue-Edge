@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -12,20 +12,20 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.ui.assets.AssetType
  * visibly follows the rasterized dirt trail instead of teleporting in a straight line.
  *
  * Sprite-sheet row convention used by the Little Dreamyland art pack shipped with the app:
- *   â€¢ 0 = back  (character moving UP, facing away from the user)
- *   â€¢ 1 = right (character moving RIGHT)
- *   â€¢ 2 = left  (character moving LEFT)
- *   â€¢ 3 = front (character facing the user â€” used while waiting OR while moving DOWN)
+ *   • 0 = back  (character moving UP, facing away from the user)
+ *   • 1 = right (character moving RIGHT)
+ *   • 2 = left  (character moving LEFT)
+ *   • 3 = front (character facing the user — used while waiting OR while moving DOWN)
  *
  * `dir` stored here is the actual row index consumed by the renderer. Facing rules enforced
  * by [tick]/[finishWork]/[jumpTo]:
- *   â€¢ IDLE (no pending waypoints, no work) â†’ always front (dir = 3) so the character looks
+ *   • IDLE (no pending waypoints, no work) → always front (dir = 3) so the character looks
  *     at the user while waiting next to the root task.
- *   â€¢ WALK vertical segment â†’ back when going up, front when going down. Vertical motion
+ *   • WALK vertical segment → back when going up, front when going down. Vertical motion
  *     DOMINATES over horizontal so "any action" shows front/back whenever there is a
  *     vertical component.
- *   â€¢ WALK pure-horizontal segment â†’ left/right.
- *   â€¢ WORK state inherits whatever dir the cat had on arrival; [AssetType.NORMAL] causes
+ *   • WALK pure-horizontal segment → left/right.
+ *   • WORK state inherits whatever dir the cat had on arrival; [AssetType.NORMAL] causes
  *     the cat to orbit around the arrival position, updating dir every tick based on the
  *     tangent vector (again with vertical dominance).
  */
@@ -122,7 +122,7 @@ class CatActor(var position: Offset = Offset.Zero) {
     points.forEach { waypoints.addLast(it) }
     this.workingCapabilityId = workingCapabilityId
     this.workAssetType = workAssetType
-    // Moving to a new target â‡’ clear any orbit anchor from the previous WORK.
+    // Moving to a new target ⇒ clear any orbit anchor from the previous WORK.
     this.orbitCenter = null
     this.orbitAngle = 0f
     if (waypoints.isNotEmpty()) state = State.WALK
@@ -158,4 +158,3 @@ class CatActor(var position: Offset = Offset.Zero) {
   val target: Offset
     get() = waypoints.lastOrNull() ?: position
 }
-

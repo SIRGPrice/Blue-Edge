@@ -1,4 +1,4 @@
-﻿package com.google.ai.edge.gallery.data
+package com.google.ai.edge.gallery.data
 
 const val SUPPORTED_GEMMA4_MODEL_FAMILY = "Gemma 4 E2B/E4B"
 
@@ -25,5 +25,4 @@ fun isSupportedGemma4EdgeModelName(name: String?): Boolean {
 
   return hasGemma4Marker && hasSupportedSizeMarker
 }
-
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
- * Structured log of every "dangerous" / outbound action performed by a workflow â€” every sent
+ * Structured log of every "dangerous" / outbound action performed by a workflow — every sent
  * message or email is recorded here with payload, recipient and success flag so the user can
  * audit what their automations have actually done on their behalf.
  *
@@ -80,7 +80,7 @@ class DangerousActionLog @Inject constructor(
 
 /**
  * Convenience: record a dangerous action from anywhere (capability code). Safe to call even
- * if the [DangerousActionLog] hasn't been constructed yet (early app start) â€” in that case the
+ * if the [DangerousActionLog] hasn't been constructed yet (early app start) — in that case the
  * entry is silently dropped.
  */
 fun logDangerousAction(
@@ -101,5 +101,4 @@ fun logDangerousAction(
     ),
   )
 }
-
 

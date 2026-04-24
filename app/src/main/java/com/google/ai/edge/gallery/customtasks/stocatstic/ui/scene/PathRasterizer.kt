@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -14,7 +14,7 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.domain.WorkflowNode
  *
  * Paths are **exactly one cell wide** and follow an orthogonal L-shape (Manhattan).
  * They always connect the **right face of the source node's bottom-right cell** to the
- * **left face of the target node's bottom-left cell**, regardless of task size â€” so
+ * **left face of the target node's bottom-left cell**, regardless of task size — so
  * multi-cell tasks get their trail glued to the bottom row instead of the top-left cell.
  */
 
@@ -97,7 +97,7 @@ private fun rasterizeManhattan(
 /**
  * Ordered list of cells from `(ax, ay)` to `(bx, by)` following the same L-shape the
  * rasterizer uses (horizontal first, then vertical). Both endpoints are INCLUDED so the
- * [CatActor] can animate a waypoint walk from task â†’ task along the exact dirt trail.
+ * [CatActor] can animate a waypoint walk from task → task along the exact dirt trail.
  */
 fun manhattanPathCells(ax: Int, ay: Int, bx: Int, by: Int): List<Pair<Int, Int>> {
   if (ax == bx && ay == by) return listOf(ax to ay)
@@ -109,5 +109,4 @@ fun manhattanPathCells(ax: Int, ay: Int, bx: Int, by: Int): List<Pair<Int, Int>>
   else for (y in (ay - 1) downTo by) out.add(bx to y)
   return out
 }
-
 

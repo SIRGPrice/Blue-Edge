@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 
 package com.google.ai.edge.gallery.customtasks.agentchat
-
-import com.google.ai.edge.gallery.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
@@ -38,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.ui.common.MarkdownText
 
 @Composable
@@ -62,7 +62,7 @@ fun SecretEditorDialog(
           visualTransformation =
             if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
           leadingIcon = {
-            val image = if (passwordVisible) R.drawable.ic_v_is_ib_il_it_y_24px else R.drawable.ic_v_is_ib_il_it_yo_ff_24px
+            val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
             // TODO: Replace with string resources.
             val description = if (passwordVisible) "Hide password" else "Show password"
             IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -76,5 +76,3 @@ fun SecretEditorDialog(
     dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
   )
 }
-
-

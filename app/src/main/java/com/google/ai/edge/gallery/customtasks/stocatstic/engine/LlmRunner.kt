@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -80,4 +80,3 @@ class ActiveModelLlmRunner @Inject constructor(
     }
   }
 }
-

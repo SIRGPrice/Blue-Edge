@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 
 package com.google.ai.edge.gallery.ui.benchmark
-
-import com.google.ai.edge.gallery.R
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +47,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.proto.ValueSeries
 import com.google.ai.edge.gallery.ui.theme.customColors
 import java.util.Locale
@@ -218,4 +218,3 @@ private fun StatCell(key: String, value: Double) {
     )
   }
 }
-

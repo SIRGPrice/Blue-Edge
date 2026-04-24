@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -67,4 +67,3 @@ fun DynValue?.asDouble(): Double? = (this as? JsonPrimitive)?.doubleOrNull
 fun DynValue?.asBool(): Boolean? = (this as? JsonPrimitive)?.booleanOrNull
 
 private fun JsonPrimitive.contentOrNull(): String? = if (isString) content else content
-

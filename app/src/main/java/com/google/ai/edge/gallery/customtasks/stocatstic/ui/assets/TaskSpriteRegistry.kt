@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -22,13 +22,13 @@ object TaskSpriteRegistry {
     val row: Int,
     val widthCells: Int = 1,
     val heightCells: Int = 1,
-    /** Behavioural tag â€” see [AssetType]. `null` means "inherit default from id". */
+    /** Behavioural tag — see [AssetType]. `null` means "inherit default from id". */
     val assetType: AssetType? = null,
   )
 
   /**
-   * Defaults Ãºnicos y estables para todas las capabilities builtin actuales. La lista de ids
-   * de assets sÃ³lo usa entradas vÃ¡lidas del catÃ¡logo generado para evitar colisiones cuando el
+   * Defaults únicos y estables para todas las capabilities builtin actuales. La lista de ids
+   * de assets sólo usa entradas válidas del catálogo generado para evitar colisiones cuando el
    * JSON sustituye a los fallbacks manuales.
    */
   private val knownCapabilityIds = listOf(
@@ -176,4 +176,3 @@ object TaskSpriteRegistry {
   val ROOT_MAILBOX = Entry(MailboxSprite.ASSET, MailboxSprite.MAILBOX_TILE.first,
     MailboxSprite.MAILBOX_TILE.second)
 }
-

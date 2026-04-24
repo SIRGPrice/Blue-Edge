@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -95,10 +95,10 @@ fun ModelDownloadingAnimation(
           sizeLabel =
             "${curDownloadStatus.receivedBytes.humanReadableSize(extraDecimalForGbAndAbove = true)} of ${totalSize.humanReadableSize()}"
           if (curDownloadStatus.bytesPerSecond > 0) {
-            sizeLabel = "$sizeLabel Â· ${curDownloadStatus.bytesPerSecond.humanReadableSize()} / s"
+            sizeLabel = "$sizeLabel · ${curDownloadStatus.bytesPerSecond.humanReadableSize()} / s"
             if (curDownloadStatus.remainingMs >= 0) {
               sizeLabel =
-                "$sizeLabel Â· ${curDownloadStatus.remainingMs.formatToHourMinSecond()} left"
+                "$sizeLabel · ${curDownloadStatus.remainingMs.formatToHourMinSecond()} left"
             }
           }
           if (isPartiallyDownloaded) {
@@ -126,4 +126,3 @@ fun ModelDownloadingAnimation(
     }
   }
 }
-

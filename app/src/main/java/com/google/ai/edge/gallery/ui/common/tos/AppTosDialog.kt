@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.tos
-
-import com.google.ai.edge.gallery.R
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.ui.common.MarkdownText
 
 /** A composable for Terms of Service dialog, shown once when app is launched. */
@@ -94,4 +94,3 @@ fun AppTosDialog(onTosAccepted: () -> Unit, viewingMode: Boolean = false) {
     }
   }
 }
-

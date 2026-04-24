@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -59,7 +59,7 @@ class StocatsticViewModel @Inject constructor(
   /**
    * Seeds a simple demo workflow so the user has something concrete to inspect after
    * completing the onboarding gallery. Idempotent: if ANY workflow already exists in the
-   * repository, does nothing. Produces a three-node chain: notification â†’ wait â†’ TTS.
+   * repository, does nothing. Produces a three-node chain: notification → wait → TTS.
    */
   fun seedDemoWorkflowIfEmpty() {
     if (repository.workflows.value.isNotEmpty()) return
@@ -79,7 +79,7 @@ class StocatsticViewModel @Inject constructor(
     latest.nodes.forEach { n ->
       when (n.capabilityId) {
         "notify.push" -> updateNodeConfig(wf.id, n.id, JsonObject(mapOf(
-          "title" to JsonPrimitive("Â¡Hola!"),
+          "title" to JsonPrimitive("¡Hola!"),
           "body"  to JsonPrimitive("Este es tu primer flujo"),
           "alarm" to JsonPrimitive(false),
         )))
@@ -158,7 +158,7 @@ class StocatsticViewModel @Inject constructor(
 
   /**
    * Adds a task to [flowId] and automatically connects it (SEQ edge) to the previous task in
-   * the flow â€” defined as either [afterNodeId] when provided, or else the last node in
+   * the flow — defined as either [afterNodeId] when provided, or else the last node in
    * insertion order. The caller sees nodes as a chain without having to draw connections.
    */
   fun addNodeAfter(
@@ -209,12 +209,12 @@ class StocatsticViewModel @Inject constructor(
 
   /**
    * Moves [nodeId] so that its top-left world position falls exactly on grid cell
-   * ([targetCellX], [targetCellY]) â€” where a cell is [cellSize] world units wide. The move is
+   * ([targetCellX], [targetCellY]) — where a cell is [cellSize] world units wide. The move is
    * rejected (the workflow is left untouched) if the destination cell is already occupied by a
    * different node of any flow in [allFlows]; callers are expected to snap the ghost back.
    *
    * Edge endpoints are stored by node id, so the workflow-path rasterizer automatically
-   * reconnects the trail from predecessors â†’ node â†’ successors on the next frame.
+   * reconnects the trail from predecessors → node → successors on the next frame.
    *
    * @return `true` when the node was moved, `false` when the drop was refused.
    */
@@ -338,5 +338,4 @@ class StocatsticViewModel @Inject constructor(
     }
   }
 }
-
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -139,5 +139,4 @@ fun entryCellOf(rect: CellRect): Pair<Int, Int> = rect.left to rect.bottom
  * the RIGHT face of the node's BOTTOM-RIGHT cell.
  */
 fun exitCellOf(rect: CellRect): Pair<Int, Int> = rect.right to rect.bottom
-
 

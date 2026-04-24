@@ -1,6 +1,3 @@
-﻿package com.google.ai.edge.gallery.customtasks.examplecustomtask
-
-import com.google.ai.edge.gallery.R
 /*
  * Copyright 2025 Google LLC
  *
@@ -17,6 +14,7 @@ import com.google.ai.edge.gallery.R
  * limitations under the License.
  */
 
+package com.google.ai.edge.gallery.customtasks.examplecustomtask
 
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -145,7 +143,7 @@ fun ExampleCustomTaskScreen(
           ) {
             if (color == textColor) {
               Icon(
-                R.drawable.ic_c_he_ck_24px,
+                Icons.Outlined.Check,
                 tint = MaterialTheme.colorScheme.onPrimary,
                 contentDescription = null,
                 modifier = Modifier.size(12.dp),
@@ -183,5 +181,3 @@ fun ExampleCustomTaskScreen(
     }
   }
 }
-
-

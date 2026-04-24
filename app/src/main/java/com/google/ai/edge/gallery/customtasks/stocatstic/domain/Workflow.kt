@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -126,5 +126,4 @@ data class Workflow(
   fun worldPos(node: WorkflowNode): Pair<Float, Float> =
     (originX + node.x) to (originY + node.y)
 }
-
 

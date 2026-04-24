@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -21,11 +21,11 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.ui.theme.PixelPalette
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 
 /**
- * StoCATstic root screen: a single infinite pixel scene. No tabs, no nested screens â€” the user
+ * StoCATstic root screen: a single infinite pixel scene. No tabs, no nested screens — the user
  * pans, zooms and edits everything in place on the same shared world.
  *
  * The global top app bar is hidden while this screen is mounted so all navigation controls
- * (back, gallery, history, â€¦) are drawn as floating icons directly on top of the scene.
+ * (back, gallery, history, …) are drawn as floating icons directly on top of the scene.
  */
 @Composable
 fun StocatsticRootScreen(
@@ -54,4 +54,3 @@ fun StocatsticRootScreen(
     InfiniteSceneScreen(vm = vm, onNavigateUp = onNavigateUp)
   }
 }
-
