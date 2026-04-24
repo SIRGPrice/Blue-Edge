@@ -28,15 +28,13 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Scaffold
@@ -51,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -252,6 +251,29 @@ fun GalleryNavHost(
         val customTask = modelManagerViewModel.getCustomTaskByTaskId(id = taskId)
         if (customTask != null) {
           if (isLegacyTasks(customTask.task.id)) {
+            // Chat / legacy routes: register with the model lifecycle manager so the model is
+            // kept loaded while we're here (and unloaded in background when no workflow needs it).
+            val isAgentChat = customTask.task.id == BuiltInTaskId.LLM_AGENT_CHAT
+            DisposableEffect(initialModel.name, isAgentChat) {
+              if (isAgentChat) modelManagerViewModel.modelLifecycleManager.onChatEntered(initialModel)
+              onDispose {
+                if (isAgentChat) modelManagerViewModel.modelLifecycleManager.onChatLeft()
+              }
+            }
+            // If a workflow is currently running AI nodes, show the pause dialog.
+            val pauseRequested by modelManagerViewModel.modelLifecycleManager
+              .pauseDialogRequested.collectAsState()
+            if (isAgentChat && pauseRequested) {
+              com.google.ai.edge.gallery.ui.common.ActiveWorkflowPauseDialog(
+                onPause = {
+                  modelManagerViewModel.modelLifecycleManager.cancelAllRunningAi?.invoke()
+                  modelManagerViewModel.modelLifecycleManager.dismissPauseDialog()
+                },
+                onKeep = {
+                  modelManagerViewModel.modelLifecycleManager.dismissPauseDialog()
+                },
+              )
+            }
             customTask.MainScreen(
               data =
                 CustomTaskDataForBuiltinTask(
@@ -278,7 +300,8 @@ fun GalleryNavHost(
                     }
                   },
                   onAppSettingsClicked = {
-                    android.widget.Toast.makeText(context, "App settings coming soon.", android.widget.Toast.LENGTH_SHORT).show()
+                    // The button now opens an internal dropdown listing the documents
+                    // stored in persistent memory (handled inside ModelPageAppBar).
                   },
                 )
             )
@@ -299,18 +322,10 @@ fun GalleryNavHost(
                   lastNavigatedModelName = ""
                   navController.navigateUp()
 
-                  // clean up all models.
-                  for (curModel in customTask.task.models) {
-                    val instanceToCleanUp = curModel.instance
-                    scope.launch(Dispatchers.Default) {
-                      modelManagerViewModel.cleanupModel(
-                        context = context,
-                        task = customTask.task,
-                        model = curModel,
-                        instanceToCleanUp = instanceToCleanUp,
-                      )
-                    }
-                  }
+                  // Do NOT unload the model here. The ModelLifecycleManager decides whether the
+                  // model stays loaded (chat page will reuse it instantly, or a running workflow
+                  // still needs it). It is only unloaded when the app is backgrounded AND no
+                  // workflow references are alive.
                 }
               },
               disableAppBarControls = disableAppBarControls,
@@ -325,7 +340,16 @@ fun GalleryNavHost(
                     setAppBarControlsDisabled = { disableAppBarControls = it },
                     setTopBarVisible = { hideTopBar = !it },
                     setCustomNavigateUpCallback = { customNavigateUpCallback = it },
-                      setCustomLeadingAction = { customLeadingAction = it },
+                    setCustomLeadingAction = { customLeadingAction = it },
+                    performNavigateUp = {
+                      if (customNavigateUpCallback != null) {
+                        customNavigateUpCallback?.invoke()
+                      } else {
+                        enableModelListAnimation = false
+                        lastNavigatedModelName = ""
+                        navController.navigateUp()
+                      }
+                    },
                   )
               )
             }
@@ -488,8 +512,28 @@ private fun CustomTaskScreen(
     showErrorDialog = modelInitializationStatus?.status == ModelInitializationStatusType.ERROR
   }
 
+  // For StoCATstic the night-sky gradient is painted behind the entire Scaffold (including the
+  // reserved space for the TopAppBar and the system navigation bar area) so the top bar appears
+  // transparent over it and the app extends edge-to-edge under the nav buttons.
+  val isStoCATstic = task.id == com.google.ai.edge.gallery.data.BuiltInTaskId.LLM_TINY_GARDEN
+  val stoCATsticBgModifier = if (isStoCATstic) {
+    Modifier.background(
+      Brush.verticalGradient(
+        listOf(
+          com.google.ai.edge.gallery.customtasks.stocatstic.ui.theme.PixelPalette.nightSky,
+          com.google.ai.edge.gallery.customtasks.stocatstic.ui.theme.PixelPalette.deepSky,
+        )
+      )
+    )
+  } else Modifier
+
   Scaffold(
+    modifier = stoCATsticBgModifier,
     containerColor = Color.Transparent,
+    // StoCATstic draws its own background (gradient) under the system nav bar, so we disable the
+    // Scaffold's automatic window insets to let the content (and background) extend edge-to-edge.
+    contentWindowInsets = if (isStoCATstic) WindowInsets(0, 0, 0, 0)
+    else androidx.compose.material3.ScaffoldDefaults.contentWindowInsets,
     topBar = {
       AnimatedVisibility(
         !hideTopBar,

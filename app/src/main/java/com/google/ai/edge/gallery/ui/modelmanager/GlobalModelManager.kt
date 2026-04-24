@@ -83,7 +83,9 @@ import androidx.compose.ui.unit.dp
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.RuntimeType
+import com.google.ai.edge.gallery.data.SUPPORTED_GEMMA4_MODEL_FAMILY
 import com.google.ai.edge.gallery.data.Task
+import com.google.ai.edge.gallery.data.isSupportedGemma4EdgeModelName
 import com.google.ai.edge.gallery.proto.ImportedModel
 import com.google.ai.edge.gallery.ui.common.TaskIcon
 import com.google.ai.edge.gallery.ui.common.modelitem.ModelItem
@@ -111,6 +113,7 @@ fun GlobalModelManager(
   var showTaskSelectorBottomSheet by remember { mutableStateOf(false) }
   var showImportModelSheet by remember { mutableStateOf(false) }
   var showUnsupportedFileTypeDialog by remember { mutableStateOf(false) }
+  var showUnsupportedModelDialog by remember { mutableStateOf(false) }
   var showUnsupportedWebModelDialog by remember { mutableStateOf(false) }
   val selectedLocalModelFileUri = remember { mutableStateOf<Uri?>(null) }
   val selectedImportedModelInfo = remember { mutableStateOf<ImportedModel?>(null) }
@@ -138,6 +141,8 @@ fun GlobalModelManager(
           // Show warning for web-only model (by checking if the file name has "-web" in it).
           else if (fileName != null && fileName.lowercase().contains("-web")) {
             showUnsupportedWebModelDialog = true
+          } else if (!isSupportedGemma4EdgeModelName(fileName)) {
+            showUnsupportedModelDialog = true
           } else {
             selectedLocalModelFileUri.value = uri
             showImportDialog = true
@@ -443,6 +448,26 @@ fun GlobalModelManager(
       text = { Text("Only \".task\" or \".litertlm\" file type is supported.") },
       confirmButton = {
         Button(onClick = { showUnsupportedFileTypeDialog = false }) {
+          Text(stringResource(R.string.ok))
+        }
+      },
+    )
+  }
+
+  if (showUnsupportedModelDialog) {
+    AlertDialog(
+      icon = {
+        Icon(
+          Icons.Rounded.Error,
+          contentDescription = stringResource(R.string.cd_error),
+          tint = MaterialTheme.colorScheme.error,
+        )
+      },
+      onDismissRequest = { showUnsupportedModelDialog = false },
+      title = { Text("Unsupported model") },
+      text = { Text("Blue Edge only supports $SUPPORTED_GEMMA4_MODEL_FAMILY model files.") },
+      confirmButton = {
+        Button(onClick = { showUnsupportedModelDialog = false }) {
           Text(stringResource(R.string.ok))
         }
       },

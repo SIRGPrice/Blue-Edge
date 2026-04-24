@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -19,8 +19,8 @@ import kotlinx.serialization.json.Json
 /**
  * Persists the set of world cells where the user has manually deleted a random decoration.
  *
- * Cells are packed as `Long` keys — the same `(cx shl 32) or (cy and 0xFFFFFFFF)` scheme the
- * renderer uses — and the whole set is written to `filesDir/stocatstic/decorations.json` on
+ * Cells are packed as `Long` keys â€” the same `(cx shl 32) or (cy and 0xFFFFFFFF)` scheme the
+ * renderer uses â€” and the whole set is written to `filesDir/stocatstic/decorations.json` on
  * every mutation. The [StateFlow] is collected by the scene so the tile disappears instantly
  * when the user confirms the deletion.
  */
@@ -58,4 +58,5 @@ class DecorationStore @Inject constructor(
     return _deleted.value.contains(key)
   }
 }
+
 

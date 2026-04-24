@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 package com.google.ai.edge.gallery.customtasks.mobileactions
-
+
+import com.google.ai.edge.gallery.R
 import android.content.Context
 import android.content.Intent
 import android.hardware.camera2.CameraCharacteristics
@@ -26,7 +27,6 @@ import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.ui.llmchat.LlmChatModelHelper
 import com.google.ai.edge.gallery.ui.llmchat.LlmModelInstance
@@ -415,3 +415,4 @@ constructor(@ApplicationContext private val appContext: Context) : ViewModel() {
     return ""
   }
 }
+

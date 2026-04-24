@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -126,4 +126,18 @@ fun centerBelow(
   x = rect.left * cellSize + (rect.width * cellSize) / 2f,
   y = (rect.top + rect.height) * cellSize + marginBottom,
 )
+
+/**
+ * The cell through which a path ENTERS a node. By convention every path arrives at the
+ * LEFT face of the node's BOTTOM-LEFT cell, so intermediate tasks drawn as wide multi-cell
+ * sprites still connect correctly along their bottom row.
+ */
+fun entryCellOf(rect: CellRect): Pair<Int, Int> = rect.left to rect.bottom
+
+/**
+ * The cell from which a path EXITS a node. Mirror of [entryCellOf]: every path leaves from
+ * the RIGHT face of the node's BOTTOM-RIGHT cell.
+ */
+fun exitCellOf(rect: CellRect): Pair<Int, Int> = rect.right to rect.bottom
+
 

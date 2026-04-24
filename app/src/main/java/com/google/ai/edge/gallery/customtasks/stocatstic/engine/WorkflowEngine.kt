@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -13,6 +13,7 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.domain.NodeResult
 import com.google.ai.edge.gallery.customtasks.stocatstic.domain.Workflow
 import com.google.ai.edge.gallery.customtasks.stocatstic.domain.WorkflowEdge
 import com.google.ai.edge.gallery.customtasks.stocatstic.domain.WorkflowNode
+import com.google.ai.edge.gallery.runtime.ModelLifecycleManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -20,10 +21,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -31,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 
 private const val TAG = "StoCATsticEngine"
+private const val AI_CAPABILITY_ID = "ai.llm"
 
 /**
  * Deterministic DAG executor. Nodes run in topological order; siblings (multiple successors of the
@@ -41,11 +45,21 @@ private const val TAG = "StoCATsticEngine"
 class WorkflowEngine @Inject constructor(
   @ApplicationContext private val appContext: Context,
   private val registry: CapabilityRegistry,
+  private val lifecycleManager: ModelLifecycleManager,
 ) {
   private val _events = MutableSharedFlow<RunEvent>(extraBufferCapacity = 128)
   val events: SharedFlow<RunEvent> = _events.asSharedFlow()
 
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+  /** All currently-running run jobs (keyed by runId) that contain at least one AI node. */
+  private val aiJobs = ConcurrentHashMap<String, Job>()
+
+  init {
+    // Let the lifecycle manager cancel all in-flight AI runs when the user taps "Pause" in the
+    // ActiveWorkflowPauseDialog shown on the chat screen.
+    lifecycleManager.cancelAllRunningAi = { cancelAllAiRuns() }
+  }
 
   /** Fire and forget. */
   fun run(workflow: Workflow) {
@@ -56,12 +70,19 @@ class WorkflowEngine @Inject constructor(
 
   /**
    * Executes [workflow] starting from [startNodeId] (or all roots when null). Useful for the
-   * "Ejecutar" action on a single selected task — the user sees that specific task run even
+   * "Ejecutar" action on a single selected task â€” the user sees that specific task run even
    * when it is not the root of the flow.
    */
   suspend fun runFrom(workflow: Workflow, startNodeId: String?): Boolean {
     val runId = UUID.randomUUID().toString()
+    val hasAi = workflow.nodes.any { it.capabilityId == AI_CAPABILITY_ID }
     _events.emit(RunEvent.Started(workflow.id, runId))
+    if (hasAi) {
+      lifecycleManager.acquireWorkflow()
+      // Track this coroutine as an AI run so it can be cancelled from outside.
+      val j = currentCoroutineContext()[Job]
+      if (j != null) aiJobs[runId] = j
+    }
     val variables: MutableMap<String, DynValue> = ConcurrentHashMap()
     val outputs: MutableMap<String, Map<String, DynValue>> = ConcurrentHashMap()
     val starts: List<WorkflowNode> = if (startNodeId != null) {
@@ -78,9 +99,21 @@ class WorkflowEngine @Inject constructor(
       }
     } catch (t: Throwable) {
       Log.e(TAG, "run failed", t); false
+    } finally {
+      if (hasAi) {
+        aiJobs.remove(runId)
+        lifecycleManager.releaseWorkflow()
+      }
     }
     _events.emit(RunEvent.Finished(workflow.id, runId, overallOk))
     return overallOk
+  }
+
+  /** Cancels every in-flight workflow run that contains an AI node. */
+  fun cancelAllAiRuns() {
+    val snapshot = aiJobs.values.toList()
+    aiJobs.clear()
+    snapshot.forEach { runCatching { it.cancel() } }
   }
 
   private suspend fun runNode(
@@ -115,7 +148,7 @@ class WorkflowEngine @Inject constructor(
     val result: NodeResult = try {
       cap.execute(ctx, node.config)
     } catch (t: Throwable) {
-      NodeResult.fail(t.message ?: "excepción")
+      NodeResult.fail(t.message ?: "excepciÃ³n")
     }
     outputs[node.id] = result.outputs + ("out" to (result.outputs["out"]
       ?: (inputs["in"] ?: JsonPrimitive(""))))
@@ -134,11 +167,11 @@ class WorkflowEngine @Inject constructor(
     }
     if (successors.isEmpty()) return true
     // Branch policy for the UI bunny:
-    //   • Conditional node → only the TRUE_BRANCH successor(s) get a bunny.
-    //   • Non-conditional fan-out → every parallel successor gets its own bunny.
+    //   â€¢ Conditional node â†’ only the TRUE_BRANCH successor(s) get a bunny.
+    //   â€¢ Non-conditional fan-out â†’ every parallel successor gets its own bunny.
     // A fresh branchId is minted when the parent has >1 effective successor (or when
     // the single successor is a TRUE_BRANCH, so the bunny visually forks at the branch).
-    // Otherwise the current branchId is reused (straight chain → same bunny).
+    // Otherwise the current branchId is reused (straight chain â†’ same bunny).
     val forks = successors.size > 1 ||
       successors.any { it.kind == WorkflowEdge.EdgeKind.TRUE_BRANCH }
     return coroutineScope {
@@ -150,5 +183,4 @@ class WorkflowEngine @Inject constructor(
     }
   }
 }
-
 

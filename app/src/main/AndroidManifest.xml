@@ -40,6 +40,18 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
+    <!-- StoCATstic reactive tasks: SMS / WhatsApp / Telegram / Discord / Email / missed call -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <uses-permission android:name="com.android.voicemail.permission.ADD_VOICEMAIL" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
     <!-- Additional permission required for push notification handling -->
     <!-- Required for resurfacing notifications after boot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -114,6 +126,12 @@
             tools:node="merge">
         </service>
 
+        <!-- Keep-alive for the loaded LLM while StoCATstic workflows are running in background. -->
+        <service
+            android:name="com.google.ai.edge.gallery.runtime.ModelKeepAliveService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
         <!-- StoCATstic: trigger receivers -->
         <receiver android:name="com.google.ai.edge.gallery.customtasks.stocatstic.engine.AlarmReceiver"
             android:exported="false">
@@ -128,6 +146,46 @@
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- StoCATstic: reactive receivers / service -->
+        <receiver android:name="com.google.ai.edge.gallery.customtasks.stocatstic.reactive.SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name="com.google.ai.edge.gallery.customtasks.stocatstic.reactive.CallStateReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.NEW_VOICEMAIL" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name="com.google.ai.edge.gallery.customtasks.stocatstic.reactive.AssistantNotificationListenerService"
+            android:label="StoCATstic Assistant"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Accessibility service: fallback for sending replies when the notification expired. -->
+        <service
+            android:name="com.google.ai.edge.gallery.customtasks.stocatstic.reactive.AssistantAccessibilityService"
+            android:label="StoCATstic Assistant"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/stocatstic_accessibility_service" />
+        </service>
 
         <uses-native-library android:name="libvndksupport.so" android:required="false"/>
         <uses-native-library android:name="libOpenCL.so" android:required="false"/>

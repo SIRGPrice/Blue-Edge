@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -24,4 +24,5 @@ object PixelPalette {
   val onDark = Color(0xFFE8ECF5)
   val onDarkMuted = Color(0xB8E8ECF5)
 }
+
 

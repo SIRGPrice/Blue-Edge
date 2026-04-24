@@ -1,14 +1,14 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
 package com.google.ai.edge.gallery.customtasks.stocatstic
-
+
+import com.google.ai.edge.gallery.R
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountTree
 import androidx.compose.runtime.Composable
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.customtasks.common.CustomTask
 import com.google.ai.edge.gallery.customtasks.common.CustomTaskData
 import com.google.ai.edge.gallery.customtasks.stocatstic.engine.ActiveModelLlmRunner
@@ -23,7 +23,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * StoCATstic Assistant — Visual workflow programming task.
+ * StoCATstic Assistant â€” Visual workflow programming task.
  *
  * The task metadata stays registered under [BuiltInTaskId.LLM_TINY_GARDEN] to keep the icon entry
  * point (`graph_1_24px`) and app-bar wiring functional without a cross-cutting refactor; the id is
@@ -38,12 +38,12 @@ class StocatsticTask @Inject constructor(
     id = BuiltInTaskId.LLM_TINY_GARDEN,
     label = "StoCATstic Assistant",
     description = "Programa visualmente flujos de trabajo y automatizaciones en el dispositivo. " +
-      "Encadena tareas (intents, linterna, notificaciones, TTS, IA…) en serie o paralelo, " +
-      "dispáralas manualmente, por horario o por evento. El gato pixelado ejecuta el flujo en vivo.",
-    shortDescription = "Programación gráfica de flujos",
+      "Encadena tareas (intents, linterna, notificaciones, TTS, IAâ€¦) en serie o paralelo, " +
+      "dispÃ¡ralas manualmente, por horario o por evento. El gato pixelado ejecuta el flujo en vivo.",
+    shortDescription = "ProgramaciÃ³n grÃ¡fica de flujos",
     sourceCodeUrl = "",
     category = Category.LLM,
-    icon = Icons.Outlined.AccountTree,
+    icon = R.drawable.ic_a_cc_ou_nt_tr_ee_24px,
     iconVectorResourceId = R.drawable.graph_1_24px,
     agentNameRes = R.string.chat_agent_agent_name,
     models = mutableListOf(),
@@ -82,7 +82,10 @@ class StocatsticTask @Inject constructor(
       setAppBarControlsDisabled = d.setAppBarControlsDisabled,
       setTopBarVisible = d.setTopBarVisible,
       setCustomLeadingAction = d.setCustomLeadingAction,
+      onNavigateUp = d.performNavigateUp,
     )
   }
 }
+
+
 

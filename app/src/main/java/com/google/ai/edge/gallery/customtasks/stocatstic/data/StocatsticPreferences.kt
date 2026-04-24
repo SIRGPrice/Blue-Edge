@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -18,16 +18,16 @@ import kotlinx.serialization.json.Json
 /**
  * User preferences for the StoCATstic scene's visual customisation.
  *
- *   • [characterId]: id inside `CharacterCatalog` (the sprite the cat/bunny/etc. uses).
- *   • [pathAssetId]: id inside `PathCatalog` (1-cell overlay drawn on every path cell).
- *   • [rootAssetId]: id inside `RootCatalog` (sprite used for the initial task of a flow).
- *   • [taskOverrides]: capabilityId → entry id inside `TaskSpriteCatalog`. Missing keys fall
+ *   â€¢ [characterId]: id inside `CharacterCatalog` (the sprite the cat/bunny/etc. uses).
+ *   â€¢ [pathAssetId]: id inside `PathCatalog` (1-cell overlay drawn on every path cell).
+ *   â€¢ [rootAssetId]: id inside `RootCatalog` (sprite used for the initial task of a flow).
+ *   â€¢ [taskOverrides]: capabilityId â†’ entry id inside `TaskSpriteCatalog`. Missing keys fall
  *     back to the built-in [TaskSpriteRegistry] default.
- *   • [firstRunCompleted]: set to true after the onboarding gallery has been dismissed with
+ *   â€¢ [firstRunCompleted]: set to true after the onboarding gallery has been dismissed with
  *     valid character + path selections.
  *
  * Note: earlier versions of the app allowed a per-tile "manual" override stored as a
- * `TileSelection`. That flow was retired — the desktop tool
+ * `TileSelection`. That flow was retired â€” the desktop tool
  * `:tools:asset-region-editor` is now the single source of truth for tile regions. Any
  * legacy fields (`pathManual`, `rootManual`, `taskManualOverrides`) or sentinel values
  * (`pathAssetId = "manual"`, `rootAssetId = "manual"`) are ignored/normalised on load so
@@ -94,11 +94,11 @@ class StocatsticPreferencesStore @Inject constructor(
 
   /**
    * Returns the set of [TaskSpriteCatalog] entry ids that are ALREADY consumed by another
-   * capability — i.e. assets the user has explicitly overridden for a different capability.
+   * capability â€” i.e. assets the user has explicitly overridden for a different capability.
    * Used by the gallery to visually mark "already taken" cells so the user doesn't reuse
    * an asset across unrelated tasks.
    *
-   * @param excludeCapabilityId Capability currently being configured — its own selection is
+   * @param excludeCapabilityId Capability currently being configured â€” its own selection is
    *   *not* considered "consumed" from its own row's point of view.
    */
   fun consumedTaskEntryIds(excludeCapabilityId: String? = null): Map<String, String> {
@@ -112,3 +112,4 @@ class StocatsticPreferencesStore @Inject constructor(
     return out
   }
 }
+

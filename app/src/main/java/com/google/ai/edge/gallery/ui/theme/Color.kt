@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,3 +89,4 @@ val inversePrimaryDark = Color(0xFF0B57D0)
 val surfaceDimDark = Color(0xFF131314)
 val surfaceBrightDark = Color(0xFF37393B)
 val scrimDark = Color(0xFF000000)
+

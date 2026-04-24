@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -19,7 +19,31 @@ typealias DynValue = JsonElement
 
 /** Parameter type descriptor exposed by a capability to the editor. */
 @Serializable
-enum class ValueKind { STRING, INT, LONG, DOUBLE, BOOL, DURATION_MS, TIME_OF_DAY, URI, PACKAGE, ENUM, EXPRESSION, JSON }
+enum class ValueKind {
+  STRING, INT, LONG, DOUBLE, BOOL, DURATION_MS, TIME_OF_DAY, URI, PACKAGE, ENUM, EXPRESSION, JSON,
+  /** List of strings (phone numbers, emails, IDs, ...). Rendered as a chip editor. */
+  STRING_LIST,
+  /** Reference to a device contact picked through ContactsContract. */
+  CONTACT_PICK,
+  /** Picker for an installed application package name. */
+  APP_PACKAGE_PICK,
+  /** Reference (content:// or file://) to an image attachment. */
+  IMAGE_REF,
+  /** Reference (content:// or file://) to an audio attachment. */
+  AUDIO_REF,
+  /** Reference to the output of another node: `{nodeId, port}`. Rendered as an upstream picker. */
+  INPUT_REF,
+  /** Marks that the capability requires its own dedicated configuration screen. */
+  SPECIAL,
+}
+
+/**
+ * Generic "one / several specific / any" selector shared by every reactive capability
+ * (Esperar SMS/WhatsApp/Telegram/Discord/Email/llamada...). Persisted as a String in
+ * [WorkflowNode.config] and complemented by a `STRING_LIST` parameter with the actual values.
+ */
+@Serializable
+enum class MatchMode { ANY, ONE, LIST }
 
 /** Schema for a single parameter the inspector will render as a form field. */
 @Serializable

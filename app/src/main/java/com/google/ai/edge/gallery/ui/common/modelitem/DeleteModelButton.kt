@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.modelitem
-
+
+import com.google.ai.edge.gallery.R
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
@@ -31,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.ModelDownloadStatus
 import com.google.ai.edge.gallery.data.ModelDownloadStatusType
@@ -55,7 +55,7 @@ fun DeleteModelButton(
         if (showDeleteButton) {
           IconButton(onClick = { showConfirmDeleteDialog = true }) {
             Icon(
-              Icons.Outlined.Delete,
+              R.drawable.ic_d_el_et_e_24px,
               contentDescription = stringResource(R.string.cd_delete_icon),
               tint = MaterialTheme.colorScheme.onSurfaceVariant,
               modifier = Modifier.alpha(0.6f),
@@ -79,3 +79,5 @@ fun DeleteModelButton(
     )
   }
 }
+
+

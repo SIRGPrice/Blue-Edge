@@ -405,4 +405,7 @@
   <!-- Content description spoken when the "menu" icon is focused. [CHAR_LIMIT=NONE] -->
   <string name="cd_menu">Menu</string>
 
+  <!-- StoCATstic assistant: accessibility service description shown in system settings. -->
+  <string name="stocatstic_accessibility_description">Permite a StoCATstic responder automáticamente a mensajes cuando la notificación de respuesta rápida ya no está disponible. Se usa solo para las acciones configuradas por ti en tus flujos.</string>
+
 </resources>

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -346,3 +346,4 @@ open class LlmChatViewModelBase() : ChatViewModel() {
 @HiltViewModel class LlmAskImageViewModel @Inject constructor() : LlmChatViewModelBase()
 
 @HiltViewModel class LlmAskAudioViewModel @Inject constructor() : LlmChatViewModelBase()
+

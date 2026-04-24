@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2026 Blue Edge.
+    Accessibility service config for the StoCATstic assistant. Declares the events and flags
+    the service needs to reliably find input fields and "send" buttons in messaging apps.
+-->
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewClicked|typeViewFocused"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:canPerformGestures="true"
+    android:description="@string/stocatstic_accessibility_description"
+    android:notificationTimeout="100"
+    android:packageNames="com.whatsapp,com.whatsapp.w4b,org.telegram.messenger,org.telegram.messenger.web,com.discord,com.google.android.gm,com.microsoft.office.outlook,com.yahoo.mobile.client.android.mail,net.thunderbird.android,com.google.android.apps.messaging,com.google.ai.edge.gallery" />
+

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +35,7 @@ import com.google.ai.edge.gallery.proto.BenchmarkResults
 import com.google.ai.edge.gallery.proto.CutoutCollection
 import com.google.ai.edge.gallery.proto.Settings
 import com.google.ai.edge.gallery.proto.UserData
+import com.google.ai.edge.gallery.ui.common.chat.rag.PersistentRagStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -159,4 +160,14 @@ internal object AppModule {
   ): DownloadRepository {
     return DefaultDownloadRepository(context, lifecycleProvider)
   }
+
+  // Provides the on-disk persistent RAG store used by document attachments / "memoria".
+  @Provides
+  @Singleton
+  fun providePersistentRagStore(
+    @ApplicationContext context: Context,
+  ): PersistentRagStore {
+    return PersistentRagStore(context)
+  }
 }
+

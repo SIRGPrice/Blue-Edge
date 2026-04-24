@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,14 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.modelitem
-
+
+import com.google.ai.edge.gallery.R
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 
 /** Composable function to display a confirmation dialog for deleting a model. */
@@ -38,3 +38,4 @@ fun ConfirmDeleteModelDialog(model: Model, onConfirm: () -> Unit, onDismiss: () 
     dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
   )
 }
+

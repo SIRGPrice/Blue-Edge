@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.chat
-
+
+import com.google.ai.edge.gallery.R
 // import androidx.compose.ui.tooling.preview.Preview
 // import com.google.ai.edge.gallery.ui.theme.GalleryTheme
 
@@ -34,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.ui.theme.bodySmallNarrow
 
 data class MessageLayoutConfig(
@@ -255,3 +255,4 @@ private fun getMessageLayoutConfig(
 //     }
 //   }
 // }
+

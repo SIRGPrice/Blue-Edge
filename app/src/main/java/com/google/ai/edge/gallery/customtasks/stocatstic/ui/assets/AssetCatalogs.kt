@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -11,9 +11,9 @@ import kotlinx.serialization.Serializable
  * Behavioural tag authored in the desktop asset-region editor for TASK_SPRITE entries and
  * consumed by the scene renderer to decide which "work" animation the character plays when it
  * reaches a task:
- *   • [PLANT]  → continuous watering animation.
- *   • [SOLID]  → continuous picking/mining animation.
- *   • [NORMAL] → no stationary animation; the character orbits around the object.
+ *   â€¢ [PLANT]  â†’ continuous watering animation.
+ *   â€¢ [SOLID]  â†’ continuous picking/mining animation.
+ *   â€¢ [NORMAL] â†’ no stationary animation; the character orbits around the object.
  */
 @Serializable
 enum class AssetType {
@@ -26,7 +26,7 @@ enum class AssetType {
  * Catalog of selectable *1-cell* sprites surfaced in the in-app gallery. Every entry maps to a
  * `(assetPath, col, row)` inside a vendor tileset. The gallery lets the user freely re-skin
  * every visual element of the StoCATstic scene: starting mailbox, workflow path overlay,
- * and each task — as long as the sprite fits a single world cell.
+ * and each task â€” as long as the sprite fits a single world cell.
  */
 
 /** Generic gallery sprite entry. Mirrors [TaskSpriteRegistry.Entry] but carries a user label. */
@@ -41,7 +41,7 @@ data class GalleryEntry(
   /**
    * Behavioural tag used by the scene to pick the "work" animation when the character arrives
    * at a task backed by this entry. `null` means "inherit a sensible default from the id"
-   * (see [defaultAssetTypeFor]) — keeps backwards compatibility with pre-tagged JSON.
+   * (see [defaultAssetTypeFor]) â€” keeps backwards compatibility with pre-tagged JSON.
    */
   val assetType: AssetType? = null,
 )
@@ -75,7 +75,7 @@ data class CharacterEntry(
   val water: String,
   val sword: String,
   val hurt: String,
-  /** Column counts per strip — all sheets share 4 rows (direction). */
+  /** Column counts per strip â€” all sheets share 4 rows (direction). */
   val idleCols: Int = 5,
   val runCols: Int = 8,
   val hoeCols: Int = 9,
@@ -113,7 +113,7 @@ object CharacterCatalog {
     hurt   = "$ROOT/DUCK/HURT/Duck_Hurt.png",
   )
   val LION = CharacterEntry(
-    id = "lion", label = "León",
+    id = "lion", label = "LeÃ³n",
     idle = "$ROOT/LION/IDLE/Idle lion.png",
     run  = "$ROOT/LION/RUN/Run lion.png",
     hoe  = "$ROOT/LION/HOE/Hoe lion.png",
@@ -147,7 +147,7 @@ object CharacterCatalog {
 object PathCatalog {
   private val FALLBACK_ENTRIES: List<GalleryEntry> = listOf(
     GalleryEntry("leaves",   "Hojas",    SpritePaths.TILE_NATURE,   22, 0),
-    GalleryEntry("flowers",  "Pétalos",  SpritePaths.TILE_NATURE,    4, 2),
+    GalleryEntry("flowers",  "PÃ©talos",  SpritePaths.TILE_NATURE,    4, 2),
     GalleryEntry("stones",   "Piedras",  SpritePaths.TILE_NATURE,    0, 4),
     GalleryEntry("dirt",     "Tierra",   SpritePaths.TILE_GRASS_AUTOTILE, 16, 2),
     GalleryEntry("sand",     "Arena",    SpritePaths.TILE_GRASS_AUTOTILE, 19, 2),
@@ -164,7 +164,7 @@ object PathCatalog {
  */
 object RootCatalog {
   private val FALLBACK_ENTRIES: List<GalleryEntry> = listOf(
-    GalleryEntry("mailbox",  "Buzón",       SpritePaths.TILE_EXTERIOR, 12, 4),
+    GalleryEntry("mailbox",  "BuzÃ³n",       SpritePaths.TILE_EXTERIOR, 12, 4),
     GalleryEntry("sign",     "Cartel",      SpritePaths.TILE_EXTERIOR,  4, 4),
     GalleryEntry("lantern",  "Farol",       SpritePaths.TILE_EXTERIOR,  8, 2),
     GalleryEntry("well",     "Pozo",        SpritePaths.TILE_EXTERIOR,  0, 6),
@@ -193,7 +193,7 @@ object TaskSpriteCatalog {
     GalleryEntry("crop_04", "Flor azul",      SpritePaths.TILE_CROPS, 12, 5),
     GalleryEntry("crop_05", "Flor violeta",   SpritePaths.TILE_CROPS, 15, 5),
     GalleryEntry("crop_06", "Trigo",          SpritePaths.TILE_CROPS, 18, 5),
-    GalleryEntry("crop_07", "Maíz",           SpritePaths.TILE_CROPS, 21, 5),
+    GalleryEntry("crop_07", "MaÃ­z",           SpritePaths.TILE_CROPS, 21, 5),
     GalleryEntry("crop_08", "Tomate",         SpritePaths.TILE_CROPS,  0,11),
     GalleryEntry("crop_09", "Calabaza",       SpritePaths.TILE_CROPS,  3,11),
     GalleryEntry("crop_10", "Zanahoria",      SpritePaths.TILE_CROPS,  6,11),
@@ -208,7 +208,7 @@ object TaskSpriteCatalog {
     GalleryEntry("nat_02",  "Mata",           SpritePaths.TILE_NATURE, 4, 0),
     GalleryEntry("nat_03",  "Matojo",         SpritePaths.TILE_NATURE, 6, 0),
     GalleryEntry("nat_04",  "Tronco",         SpritePaths.TILE_NATURE, 0, 4),
-    GalleryEntry("nat_05",  "Tocón",          SpritePaths.TILE_NATURE, 2, 4),
+    GalleryEntry("nat_05",  "TocÃ³n",          SpritePaths.TILE_NATURE, 2, 4),
     GalleryEntry("nat_06",  "Rocas",          SpritePaths.TILE_NATURE, 4, 4),
     GalleryEntry("nat_07",  "Flor silvestre", SpritePaths.TILE_NATURE, 0, 2),
     GalleryEntry("nat_08",  "Flor roja",      SpritePaths.TILE_NATURE, 2, 2),
@@ -219,7 +219,7 @@ object TaskSpriteCatalog {
     GalleryEntry("ext_02",  "Barril",         SpritePaths.TILE_EXTERIOR,  4, 6),
     GalleryEntry("ext_03",  "Caja",           SpritePaths.TILE_EXTERIOR,  0, 4),
     GalleryEntry("ext_04",  "Pozo",           SpritePaths.TILE_EXTERIOR,  0, 6),
-    GalleryEntry("ext_05",  "Buzón",          SpritePaths.TILE_EXTERIOR, 12, 4),
+    GalleryEntry("ext_05",  "BuzÃ³n",          SpritePaths.TILE_EXTERIOR, 12, 4),
     GalleryEntry("ext_06",  "Campana",        SpritePaths.TILE_EXTERIOR, 16, 4),
     GalleryEntry("ext_07",  "Tambor",         SpritePaths.TILE_EXTERIOR, 20, 4),
     // House interior ---------------------------------------------------------------------------
@@ -228,13 +228,14 @@ object TaskSpriteCatalog {
     GalleryEntry("hs_02",   "Reloj",          SpritePaths.TILE_HOUSE,  4, 0),
     GalleryEntry("hs_03",   "Cuadro",         SpritePaths.TILE_HOUSE,  6, 0),
     GalleryEntry("hs_04",   "Cofre",          SpritePaths.TILE_HOUSE,  0, 2),
-    GalleryEntry("hs_05",   "Lámpara",        SpritePaths.TILE_HOUSE,  2, 2),
+    GalleryEntry("hs_05",   "LÃ¡mpara",        SpritePaths.TILE_HOUSE,  2, 2),
     // Barn -------------------------------------------------------------------------------------
     GalleryEntry("bn_00",   "Heno",           SpritePaths.TILE_BARN,   0, 0),
-    GalleryEntry("bn_01",   "Bidón",          SpritePaths.TILE_BARN,   2, 0),
+    GalleryEntry("bn_01",   "BidÃ³n",          SpritePaths.TILE_BARN,   2, 0),
     GalleryEntry("bn_02",   "Saco",           SpritePaths.TILE_BARN,   4, 0),
   )
   val ENTRIES: List<GalleryEntry> = TaskSpriteCatalogGen.ENTRIES.ifEmpty { FALLBACK_ENTRIES }
   val DEFAULT: GalleryEntry = ENTRIES.firstOrNull() ?: FALLBACK_ENTRIES.first()
   fun byId(id: String): GalleryEntry = ENTRIES.firstOrNull { it.id == id } ?: DEFAULT
 }
+

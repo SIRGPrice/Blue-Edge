@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.modelmanager
-
+
+import com.google.ai.edge.gallery.R
 import android.content.Context
 import android.util.Log
 import androidx.activity.result.ActivityResult
@@ -24,7 +25,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.edge.gallery.AppLifecycleProvider
 import com.google.ai.edge.gallery.BuildConfig
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.common.ProjectConfig
 import com.google.ai.edge.gallery.common.getJsonResponse
 import com.google.ai.edge.gallery.common.isAICoreSupported
@@ -46,14 +46,19 @@ import com.google.ai.edge.gallery.data.ModelDownloadStatusType
 import com.google.ai.edge.gallery.data.NumberSliderConfig
 import com.google.ai.edge.gallery.data.RuntimeType
 import com.google.ai.edge.gallery.data.SOC
+import com.google.ai.edge.gallery.data.SUPPORTED_GEMMA4_MODEL_FAMILY
 import com.google.ai.edge.gallery.data.TMP_FILE_EXT
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.data.ValueType
 import com.google.ai.edge.gallery.data.createLlmChatConfigs
+import com.google.ai.edge.gallery.data.isSupportedGemma4EdgeModelName
 import com.google.ai.edge.gallery.proto.AccessTokenData
 import com.google.ai.edge.gallery.proto.ImportedModel
 import com.google.ai.edge.gallery.proto.Theme
+import com.google.ai.edge.gallery.runtime.ModelLifecycleManager
+import com.google.ai.edge.gallery.runtime.ModelOwner
 import com.google.ai.edge.gallery.runtime.aicore.AICoreModelHelper
+import com.google.ai.edge.gallery.ui.common.chat.rag.ChatAttachmentsCoordinator
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -188,7 +193,9 @@ constructor(
   val dataStoreRepository: DataStoreRepository,
   private val lifecycleProvider: AppLifecycleProvider,
   private val customTasks: Set<@JvmSuppressWildcards CustomTask>,
+  val modelLifecycleManager: ModelLifecycleManager,
   @ApplicationContext private val context: Context,
+  val chatAttachments: ChatAttachmentsCoordinator,
 ) : ViewModel() {
   private val externalFilesDir = context.getExternalFilesDir(null)
   protected val _uiState = MutableStateFlow(createEmptyUiState())
@@ -434,6 +441,10 @@ constructor(
             model = model,
             status = ModelInitializationStatusType.INITIALIZED,
           )
+          // Register with the lifecycle manager so workflows/chat share ownership.
+          val owner = if (task.id == com.google.ai.edge.gallery.data.BuiltInTaskId.LLM_AGENT_CHAT)
+            ModelOwner.CHAT else ModelOwner.WORKFLOW
+          modelLifecycleManager.markLoaded(model, owner)
           if (model.cleanUpAfterInit) {
             Log.d(TAG, "Model '${model.name}' needs cleaning up after init.")
             cleanupModel(context = context, task = task, model = model)
@@ -473,6 +484,14 @@ constructor(
       return
     }
 
+    // Respect model lifecycle ownership: if a StoCATstic workflow is currently using the model
+    // (owner=WORKFLOW or any workflow ref is alive) don't unload on chat navigations.
+    if (modelLifecycleManager.hasActiveWorkflow()) {
+      Log.d(TAG, "Skipping cleanup of '${model.name}': workflow still active.")
+      onDone()
+      return
+    }
+
     if (model.instance != null) {
       model.cleanUpAfterInit = false
       Log.d(TAG, "Cleaning up model '${model.name}'...")
@@ -483,6 +502,7 @@ constructor(
           model = model,
           status = ModelInitializationStatusType.NOT_INITIALIZED,
         )
+        modelLifecycleManager.markUnloaded()
         Log.d(TAG, "Clean up model '${model.name}' done")
         onDone()
       }
@@ -610,6 +630,11 @@ constructor(
 
   fun addImportedLlmModel(info: ImportedModel) {
     Log.d(TAG, "adding imported llm model: $info")
+
+    if (!isSupportedGemma4EdgeModelName(info.fileName)) {
+      Log.w(TAG, "Ignoring imported model '${info.fileName}' because only $SUPPORTED_GEMMA4_MODEL_FAMILY is supported.")
+      return
+    }
 
     // Create model.
     val model = createModelFromImportedModelInfo(info = info)
@@ -944,10 +969,7 @@ constructor(
           }
 
           // Blue Edge: only allow Gemma 4 E4B and E2B models.
-          val nameLower = allowedModel.name.lowercase()
-          val isGemma4Edge = nameLower.contains("gemma") && nameLower.contains("4") &&
-            (nameLower.contains("e4b") || nameLower.contains("e2b"))
-          if (!isGemma4Edge) {
+          if (!isSupportedGemma4EdgeModelName(allowedModel.name)) {
             continue
           }
 
@@ -1113,8 +1135,17 @@ constructor(
       }
     }
 
-    // Load imported models.
-    for (importedModel in dataStoreRepository.readImportedModels()) {
+    // Load imported models, keeping only the supported Gemma 4 variants.
+    val storedImportedModels = dataStoreRepository.readImportedModels()
+    val supportedImportedModels =
+      storedImportedModels.filter { importedModel ->
+        isSupportedGemma4EdgeModelName(importedModel.fileName)
+      }
+    if (supportedImportedModels.size != storedImportedModels.size) {
+      Log.w(TAG, "Pruning imported models that are not $SUPPORTED_GEMMA4_MODEL_FAMILY.")
+      dataStoreRepository.saveImportedModels(importedModels = supportedImportedModels)
+    }
+    for (importedModel in supportedImportedModels) {
       Log.d(TAG, "stored imported model: $importedModel")
 
       // Create model.
@@ -1199,7 +1230,7 @@ constructor(
         llmSupportThinking = llmSupportThinking,
         llmMaxToken = llmMaxToken,
         accelerators = accelerators,
-        // We assume all imported models are LLM for now.
+        // Imported models are restricted to supported Gemma 4 LiteRT LM variants.
         isLlm = true,
         runtimeType = RuntimeType.LITERT_LM,
       )
@@ -1411,3 +1442,4 @@ constructor(
 private fun getAllowlistUrl(version: String): String {
   return "$ALLOWLIST_BASE_URL/${version}.json"
 }
+

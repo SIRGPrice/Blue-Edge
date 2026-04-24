@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -18,12 +18,12 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.ui.assets.SpriteSheet
 /**
  * Pixel-art terrain layer. One CELL = one tile = the minimum interaction unit.
  *
- *   • Solid grass-green [fallbackColor] is painted as the ground.
- *   • Every path cell gets the *same* dirt tile ([GrassAutotile.DIRT_BASE]) plus an overlay
- *     "leaves on the ground" sprite — no per-cell variants, so the workflow trail reads
+ *   â€¢ Solid grass-green [fallbackColor] is painted as the ground.
+ *   â€¢ Every path cell gets the *same* dirt tile ([GrassAutotile.DIRT_BASE]) plus an overlay
+ *     "leaves on the ground" sprite â€” no per-cell variants, so the workflow trail reads
  *     as one consistent strip.
- *   • Random decorations are sampled via [DecorationSampler] (blue-noise-ish, one per
- *     [DecorationCatalog.MIN_SPACING_CELLS]×MIN_SPACING_CELLS block), skipped near flows or
+ *   â€¢ Random decorations are sampled via [DecorationSampler] (blue-noise-ish, one per
+ *     [DecorationCatalog.MIN_SPACING_CELLS]Ã—MIN_SPACING_CELLS block), skipped near flows or
  *     when the user has manually deleted them.
  */
 fun DrawScope.drawContinuousTerrain(
@@ -96,3 +96,4 @@ fun DrawScope.drawContinuousTerrain(
     }
   }
 }
+

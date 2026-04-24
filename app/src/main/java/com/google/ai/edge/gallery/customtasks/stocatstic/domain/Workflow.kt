@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -66,6 +66,39 @@ sealed class WorkflowTrigger {
 
   @Serializable
   data class BootCompleted(val id: String = "boot") : WorkflowTrigger()
+
+  // --- Reactive triggers -------------------------------------------------------------------
+  // Each reactive trigger mirrors the `mode + senders` shape exposed by its matching
+  // `trigger.*` capability so the engine and scheduler can match events uniformly.
+
+  /** Fires when an incoming SMS matches the filter. */
+  @Serializable
+  data class SmsReceived(
+    val mode: MatchMode = MatchMode.ANY,
+    val senders: List<String> = emptyList(),
+    val id: String = "sms",
+  ) : WorkflowTrigger()
+
+  /**
+   * Fires when a notification on [packageName] (whatsapp/telegram/discord/gmail/outlook/...)
+   * matches the sender filter. Used by WhatsApp/Telegram/Discord/Email wait tasks.
+   */
+  @Serializable
+  data class NotificationMatched(
+    val packageNames: List<String>,
+    val mode: MatchMode = MatchMode.ANY,
+    val senders: List<String> = emptyList(),
+    val id: String = "notification",
+  ) : WorkflowTrigger()
+
+  /** Fires when a missed call matches the filter (optionally only while user wasn't looking). */
+  @Serializable
+  data class CallMissed(
+    val mode: MatchMode = MatchMode.ANY,
+    val numbers: List<String> = emptyList(),
+    val onlyWhenScreenOff: Boolean = true,
+    val id: String = "missed_call",
+  ) : WorkflowTrigger()
 }
 
 /** Top-level workflow aggregate. */
@@ -93,4 +126,5 @@ data class Workflow(
   fun worldPos(node: WorkflowNode): Pair<Float, Float> =
     (originX + node.x) to (originY + node.y)
 }
+
 

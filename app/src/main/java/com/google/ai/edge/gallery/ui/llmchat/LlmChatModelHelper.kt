@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,6 @@ import com.google.ai.edge.gallery.common.cleanUpMediapipeTaskErrorMessage
 import com.google.ai.edge.gallery.data.Accelerator
 import com.google.ai.edge.gallery.data.ConfigKeys
 import com.google.ai.edge.gallery.data.DEFAULT_MAX_TOKEN
-import com.google.ai.edge.gallery.data.DEFAULT_TEMPERATURE
 import com.google.ai.edge.gallery.data.DEFAULT_TOPK
 import com.google.ai.edge.gallery.data.DEFAULT_TOPP
 import com.google.ai.edge.gallery.data.DEFAULT_VISION_ACCELERATOR
@@ -106,8 +105,8 @@ object LlmChatModelHelper : LlmModelHelper {
       EngineConfig(
         modelPath = modelPath,
         backend = preferredBackend,
-        visionBackend = if (shouldEnableImage) visionBackend else null, // must be GPU for Gemma 3n
-        audioBackend = if (shouldEnableAudio) Backend.CPU() else null, // must be CPU for Gemma 3n
+        visionBackend = if (shouldEnableImage) visionBackend else null,
+        audioBackend = if (shouldEnableAudio) Backend.CPU() else null,
         maxNumTokens = maxTokens,
         cacheDir =
           if (modelPath.startsWith("/data/local/tmp"))
@@ -305,3 +304,4 @@ object LlmChatModelHelper : LlmModelHelper {
     return stream.toByteArray()
   }
 }
+

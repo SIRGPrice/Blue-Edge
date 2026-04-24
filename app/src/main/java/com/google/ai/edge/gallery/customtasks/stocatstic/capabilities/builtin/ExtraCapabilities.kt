@@ -141,23 +141,6 @@ class ToastCapability @Inject constructor() : Capability {
   }
 }
 
-class SetVolumeCapability @Inject constructor() : Capability {
-  override val id = "device.set_volume"
-  override val label = "Ajustar volumen"
-  override val description = "Ajusta el volumen del stream multimedia (0..100%)."
-  override val category = CapabilityCategory.DEVICE
-  override val icon = Icons.Outlined.VolumeUp
-  override val params = listOf(
-    ParamSpec("percent", "Volumen %", ValueKind.INT, default = JsonPrimitive(50L)),
-  )
-  override suspend fun execute(ctx: ExecutionContext, config: JsonObject): NodeResult {
-    val pct = (config["percent"].asLong() ?: 50L).coerceIn(0L, 100L)
-    val am = ctx.androidContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    val max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-    am.setStreamVolume(AudioManager.STREAM_MUSIC, (max * pct / 100L).toInt(), 0)
-    return NodeResult.ok()
-  }
-}
 
 class RingerModeCapability @Inject constructor() : Capability {
   override val id = "device.ringer_mode"
@@ -256,17 +239,9 @@ class OpenDisplaySettingsCapability @Inject constructor() :
   override val icon = Icons.Outlined.Brightness6
 }
 
-class OpenDataUsageSettingsCapability @Inject constructor() :
-  SettingsIntentCapability(Settings.ACTION_DATA_ROAMING_SETTINGS) {
-  override val id = "intent.data_settings"
-  override val label = "Uso de datos"
-  override val description = "Abre los ajustes de uso de datos móviles."
-  override val icon = Icons.Outlined.NetworkCheck
-}
-
 /*
  * ================================================================================================
- *  MEDIA / camera / music intents
+ *  MEDIA / camera intents
  * ================================================================================================
  */
 class LaunchCameraCapability @Inject constructor() : Capability {
@@ -282,26 +257,6 @@ class LaunchCameraCapability @Inject constructor() : Capability {
   }
 }
 
-class LaunchMusicSearchCapability @Inject constructor() : Capability {
-  override val id = "media.music_search"
-  override val label = "Buscar música"
-  override val description = "Abre una búsqueda de música con una consulta (YouTube Music, Spotify…)."
-  override val category = CapabilityCategory.INTENT
-  override val icon = Icons.Outlined.MusicNote
-  override val params = listOf(
-    ParamSpec("query", "Consulta", ValueKind.STRING, default = JsonPrimitive("")),
-  )
-  override suspend fun execute(ctx: ExecutionContext, config: JsonObject): NodeResult {
-    val q = config["query"].asString().orEmpty().ifBlank { ctx.inputs["in"].asString().orEmpty() }
-    if (q.isBlank()) return NodeResult.fail("Consulta vacía")
-    val i = Intent(MediaStore.INTENT_ACTION_MEDIA_SEARCH)
-      .putExtra(MediaStore.EXTRA_MEDIA_FOCUS, "vnd.android.cursor.item/audio")
-      .putExtra("query", q)
-      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    return runCatching { ctx.androidContext.startActivity(i); NodeResult.ok() }
-      .getOrElse { NodeResult.fail(it.message ?: "error búsqueda") }
-  }
-}
 
 /*
  * ================================================================================================
@@ -535,50 +490,6 @@ class TextFormatCapability @Inject constructor() : Capability {
   }
 }
 
-class TextTransformCapability @Inject constructor() : Capability {
-  override val id = "text.transform"
-  override val label = "Transformar texto"
-  override val description = "Convierte el input a mayúsculas, minúsculas, recortado, reverso, longitud…"
-  override val category = CapabilityCategory.CONTROL
-  override val icon = Icons.Outlined.Sort
-  override val params = listOf(
-    ParamSpec("op", "Operación", ValueKind.ENUM,
-      enumValues = listOf("upper", "lower", "trim", "reverse", "length"),
-      default = JsonPrimitive("upper")),
-  )
-  override suspend fun execute(ctx: ExecutionContext, config: JsonObject): NodeResult {
-    val s = ctx.inputs["in"].asString().orEmpty()
-    val r = when (config["op"].asString()) {
-      "lower" -> s.lowercase(Locale.getDefault())
-      "trim" -> s.trim()
-      "reverse" -> s.reversed()
-      "length" -> s.length.toString()
-      else -> s.uppercase(Locale.getDefault())
-    }
-    return NodeResult.ok(mapOf("out" to JsonPrimitive(r)))
-  }
-}
-
-class RegexReplaceCapability @Inject constructor() : Capability {
-  override val id = "text.regex_replace"
-  override val label = "Reemplazar regex"
-  override val description = "Aplica una expresión regular al input y sustituye coincidencias."
-  override val category = CapabilityCategory.CONTROL
-  override val icon = Icons.Outlined.Edit
-  override val params = listOf(
-    ParamSpec("pattern", "Patrón", ValueKind.STRING, default = JsonPrimitive("")),
-    ParamSpec("replacement", "Reemplazo", ValueKind.STRING, default = JsonPrimitive("")),
-  )
-  override suspend fun execute(ctx: ExecutionContext, config: JsonObject): NodeResult {
-    val s = ctx.inputs["in"].asString().orEmpty()
-    val pat = config["pattern"].asString().orEmpty()
-    val rep = config["replacement"].asString().orEmpty()
-    if (pat.isBlank()) return NodeResult.ok(mapOf("out" to JsonPrimitive(s)))
-    val r = runCatching { Regex(pat).replace(s, rep) }.getOrElse { return NodeResult.fail("regex inválida") }
-    return NodeResult.ok(mapOf("out" to JsonPrimitive(r)))
-  }
-}
-
 /*
  * ================================================================================================
  *  MATH / random
@@ -782,21 +693,6 @@ class PingCapability @Inject constructor() : Capability {
  *  FLOW CONTROL extras
  * ================================================================================================
  */
-class LogCapability @Inject constructor() : Capability {
-  override val id = "debug.log"
-  override val label = "Registrar (log)"
-  override val description = "Escribe el input en logcat para depuración."
-  override val category = CapabilityCategory.CONTROL
-  override val icon = Icons.Outlined.Terminal
-  override val params = listOf(
-    ParamSpec("tag", "Etiqueta", ValueKind.STRING, required = false, default = JsonPrimitive("StoCATstic")),
-  )
-  override suspend fun execute(ctx: ExecutionContext, config: JsonObject): NodeResult {
-    val tag = config["tag"].asString().orEmpty().ifBlank { "StoCATstic" }
-    android.util.Log.i(tag, ctx.inputs["in"].asString().orEmpty())
-    return NodeResult.ok()
-  }
-}
 
 class CounterIncrementCapability @Inject constructor() : Capability {
   override val id = "control.counter"

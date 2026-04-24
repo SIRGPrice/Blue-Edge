@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -22,13 +22,13 @@ object TaskSpriteRegistry {
     val row: Int,
     val widthCells: Int = 1,
     val heightCells: Int = 1,
-    /** Behavioural tag — see [AssetType]. `null` means "inherit default from id". */
+    /** Behavioural tag â€” see [AssetType]. `null` means "inherit default from id". */
     val assetType: AssetType? = null,
   )
 
   /**
-   * Defaults únicos y estables para todas las capabilities builtin actuales. La lista de ids
-   * de assets sólo usa entradas válidas del catálogo generado para evitar colisiones cuando el
+   * Defaults Ãºnicos y estables para todas las capabilities builtin actuales. La lista de ids
+   * de assets sÃ³lo usa entradas vÃ¡lidas del catÃ¡logo generado para evitar colisiones cuando el
    * JSON sustituye a los fallbacks manuales.
    */
   private val knownCapabilityIds = listOf(
@@ -49,17 +49,14 @@ object TaskSpriteRegistry {
     "control.passthrough",
     "control.set_var",
     "control.success",
-    "debug.log",
     "device.battery",
     "device.flashlight",
     "device.ringer_mode",
-    "device.set_volume",
     "device.toast",
     "device.tts",
     "device.vibrate",
     "intent.airplane_settings",
     "intent.bluetooth_settings",
-    "intent.data_settings",
     "intent.display_settings",
     "intent.generic",
     "intent.location_settings",
@@ -70,7 +67,6 @@ object TaskSpriteRegistry {
     "logic.compare",
     "math.eval",
     "media.camera",
-    "media.music_search",
     "net.http_get",
     "net.ping",
     "notify.push",
@@ -80,8 +76,6 @@ object TaskSpriteRegistry {
     "system.clipboard_copy",
     "system.clipboard_read",
     "text.format",
-    "text.regex_replace",
-    "text.transform",
     "time.now",
     "time.weekday",
   )
@@ -104,17 +98,14 @@ object TaskSpriteRegistry {
     "crop_01",
     "crop_05",
     "crop_14",
-    "crop_09",
     "crop_12",
     "crop_08",
     "crop_10",
-    "crop_06",
     "crop_11",
     "crop_03",
     "crop_04",
     "crop_13",
     "ext_05",
-    "ext_04",
     "ext_00",
     "hs_05",
     "ext_01",
@@ -125,7 +116,6 @@ object TaskSpriteRegistry {
     "nat_03",
     "nat_00",
     "nat_01",
-    "nat_02",
     "nat_06",
     "nat_05",
     "nat_04",
@@ -135,8 +125,6 @@ object TaskSpriteRegistry {
     "house_02",
     "house_03",
     "house_04",
-    "house_05",
-    "house_06",
     "house_07",
     "house_08",
   )
@@ -188,3 +176,4 @@ object TaskSpriteRegistry {
   val ROOT_MAILBOX = Entry(MailboxSprite.ASSET, MailboxSprite.MAILBOX_TILE.first,
     MailboxSprite.MAILBOX_TILE.second)
 }
+

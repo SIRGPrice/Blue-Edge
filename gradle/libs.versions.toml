@@ -41,6 +41,7 @@ moshi = "1.15.2"
 ksp = "2.3.6"
 mlkit-genai-prompt = "1.0.0-beta2"  # Ref: https://developers.google.com/ml-kit/genai/prompt/android/get-started#configure-project
 flatlaf = "3.5.4"
+pdfboxAndroid = "2.0.27.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -96,6 +97,7 @@ moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-code
 mlkit-genai-prompt = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "mlkit-genai-prompt" }
 flatlaf = { group = "com.formdev", name = "flatlaf", version.ref = "flatlaf" }
 flatlaf-extras = { group = "com.formdev", name = "flatlaf-extras", version.ref = "flatlaf" }
+pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

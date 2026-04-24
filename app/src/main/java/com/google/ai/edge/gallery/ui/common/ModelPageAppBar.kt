@@ -21,12 +21,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.MapsUgc
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -34,11 +41,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.google.ai.edge.gallery.ui.common.chat.rag.RagDocumentRef
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -205,14 +220,106 @@ fun ModelPageAppBar(
         }
         if (showAppSettingsButton && downloadSucceeded) {
           val enableButton = !isModelInitializing && !inProgress
-          IconButton(onClick = onAppSettingsClicked, enabled = enableButton,
-            modifier = Modifier.alpha(if (enableButton) 1f else 0.5f)) {
-            Icon(
-              painter = painterResource(R.drawable.settings_24px),
-              contentDescription = "App Settings",
-              modifier = Modifier.size(iconSize),
-              tint = Color.Unspecified,
-            )
+          var showDocsMenu by remember { mutableStateOf(false) }
+          val persistentDocs = remember { mutableStateListOf<RagDocumentRef>() }
+          val scope = rememberCoroutineScope()
+          val persistentStore = modelManagerViewModel.chatAttachments.persistentStore
+
+          suspend fun refreshDocs() {
+            val docs = withContext(Dispatchers.IO) { persistentStore.listDocuments() }
+            persistentDocs.clear()
+            persistentDocs.addAll(docs)
+          }
+
+          LaunchedEffect(showDocsMenu) {
+            if (showDocsMenu) refreshDocs()
+          }
+
+          Box {
+            IconButton(
+              onClick = {
+                showDocsMenu = true
+                onAppSettingsClicked()
+              },
+              enabled = enableButton,
+              modifier = Modifier.alpha(if (enableButton) 1f else 0.5f),
+            ) {
+              Icon(
+                painter = painterResource(R.drawable.stack_24px),
+                contentDescription = "Memoria persistente",
+                modifier = Modifier.size(iconSize),
+                tint = if (isStoCATstic) stoCATsticContentColor else LocalContentColor.current,
+              )
+            }
+            DropdownMenu(
+              expanded = showDocsMenu,
+              onDismissRequest = { showDocsMenu = false },
+              modifier = Modifier.widthIn(min = 240.dp, max = 360.dp),
+            ) {
+              Text(
+                text = "Memoria persistente",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+              )
+              HorizontalDivider()
+              if (persistentDocs.isEmpty()) {
+                DropdownMenuItem(
+                  text = {
+                    Text(
+                      "No hay documentos almacenados.",
+                      style = MaterialTheme.typography.bodySmall,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                  },
+                  onClick = { showDocsMenu = false },
+                  enabled = false,
+                )
+              } else {
+                persistentDocs.toList().forEach { doc ->
+                  DropdownMenuItem(
+                    text = {
+                      Column {
+                        Text(
+                          text = doc.displayName,
+                          maxLines = 1,
+                          overflow = TextOverflow.Ellipsis,
+                          style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                          text = "${doc.chunkCount} fragmentos",
+                          style = MaterialTheme.typography.labelSmall,
+                          color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                      }
+                    },
+                    leadingIcon = {
+                      Icon(
+                        imageVector = Icons.Outlined.Description,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                      )
+                    },
+                    trailingIcon = {
+                      IconButton(
+                        onClick = {
+                          scope.launch {
+                            withContext(Dispatchers.IO) { persistentStore.remove(doc.id) }
+                            refreshDocs()
+                          }
+                        },
+                      ) {
+                        Icon(
+                          imageVector = Icons.Outlined.DeleteOutline,
+                          contentDescription = "Eliminar",
+                          modifier = Modifier.size(18.dp),
+                        )
+                      }
+                    },
+                    onClick = { /* no-op: tapping just surfaces info */ },
+                  )
+                }
+              }
+            }
           }
         }
       }

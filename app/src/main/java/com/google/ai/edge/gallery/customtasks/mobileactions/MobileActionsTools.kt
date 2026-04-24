@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -132,3 +132,4 @@ class MobileActionsTools(val onFunctionCalled: (Action) -> Unit) : ToolSet {
     return mapOf("result" to "success", "datetime" to datetime, "title" to title)
   }
 }
+
