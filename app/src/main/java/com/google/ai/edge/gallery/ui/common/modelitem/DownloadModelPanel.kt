@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.modelitem
-
+
+import com.google.ai.edge.gallery.R
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -40,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.ModelDownloadStatus
 import com.google.ai.edge.gallery.data.ModelDownloadStatusType
@@ -96,7 +96,7 @@ fun DownloadModelPanel(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
           ) {
-            Icon(Icons.Rounded.BarChart, contentDescription = null, tint = textColor)
+            Icon(R.drawable.ic_b_ar_ch_ar_t_24px, contentDescription = null, tint = textColor)
 
             if (isExpanded) {
               Text(
@@ -138,3 +138,5 @@ fun DownloadModelPanel(
     }
   }
 }
+
+

@@ -33,10 +33,13 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountTree
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
@@ -117,6 +120,22 @@ private const val MAX_ZOOM = 3f
 /** Distance threshold (world units) used to decide whether the cat was "on" the moved task. */
 private const val CAT_FOLLOW_THRESHOLD = CELL * 2f
 
+private val TopBarBackTint = Color(0xFFF6D368)
+private val TopBarGalleryTint = Color(0xFF6EE7FF)
+private val TopBarHistoryTint = Color(0xFFFF6FB1)
+
+/**
+ * Capability ids that need a permission-flow prompt even if their [Capability.requiredPermissions]
+ * is empty or already covered by the manifest — typically special-access toggles that can't be
+ * granted via `RequestMultiplePermissions` (Notification Listener, Accessibility, ...).
+ */
+private val PERMISSION_BOUND_CAP_IDS = setOf(
+  "trigger.sms", "trigger.whatsapp", "trigger.telegram", "trigger.discord",
+  "trigger.email", "trigger.missed_call",
+  "action.reply.sms", "action.reply.whatsapp", "action.reply.telegram",
+  "action.reply.discord", "action.reply.email",
+)
+
 /** Which action the palette should perform when a capability is picked. */
 private sealed class PaletteTarget {
   data class NewFlow(val worldSpawn: Offset) : PaletteTarget()
@@ -137,13 +156,25 @@ private sealed class PaletteTarget {
 fun InfiniteSceneScreen(
   vm: StocatsticViewModel,
   externalGalleryRequestCount: Int = 0,
+  onNavigateUp: () -> Unit = {},
 ) {
   val ctx = LocalContext.current
   val flows by vm.workflows.collectAsState()
   val prefs by vm.preferences.collectAsState()
   /** Gallery sheet visibility. On very first run it opens automatically (see LaunchedEffect). */
   var galleryOpen by remember { mutableStateOf(false) }
+  var historyOpen by remember { mutableStateOf(false) }
+  /** Capability awaiting permission grant before being added. Pair of (cap, doAdd-lambda). */
+  var pendingAddCapability by remember {
+    mutableStateOf<Pair<com.google.ai.edge.gallery.customtasks.stocatstic.domain.Capability, () -> Unit>?>(null)
+  }
   var onboardingMode by remember { mutableStateOf(false) }
+  // Gallery search persistence: the last scoped-search target survives sheet dismissals so
+  // reopening the gallery lands on the same task / asset until another search overrides it.
+  // Picking a task sets the first field, picking an asset sets the second — they are
+  // independent so you can combine both (task first, then asset: both positions restored).
+  var pinnedGalleryCapId by rememberSaveable { mutableStateOf<String?>(null) }
+  var pinnedGalleryAssetId by rememberSaveable { mutableStateOf<String?>(null) }
   LaunchedEffect(Unit) {
     if (!prefs.firstRunCompleted) {
       onboardingMode = true
@@ -209,12 +240,20 @@ fun InfiniteSceneScreen(
    * the cat stays on the last task until the next `Started` event for the same workflow
    * clears every cat of that workflow and starts fresh.
    *
-   * Idle cats (shown at the root of every flow when nothing is running) are NOT kept here —
-   * they are synthesised on the fly at draw time (see [idleCatsForFlow]) so they never
-   * persist across runs.
+   * Idle cats (shown at the root of every flow when nothing is running) are kept in
+   * [idleCats], a separate map so their position persists across recompositions: when the
+   * user drags the root task to a new cell the bunny must RUN to the new location instead
+   * of teleporting there, which would be the behaviour of a frame-rebuilt CatActor.
    */
 
   val branchCats = remember { mutableStateMapOf<String, CatActor>() }
+  /**
+   * Persistent "waiting" cat per workflow, keyed by flow id. Created on first sight of the
+   * flow and reused across recompositions so that moving the root task animates the cat
+   * (walking along a Manhattan path to the new cell) rather than snapping it instantly.
+   * Entries are pruned when their flow is deleted.
+   */
+  val idleCats = remember { mutableStateMapOf<String, CatActor>() }
   /**
    * Tracks the LAST node each branch-cat has visited. Keyed exactly like [branchCats]. We
    * use this to force the bunny to walk through every intermediate node's cells when it
@@ -277,6 +316,7 @@ fun InfiniteSceneScreen(
       val dt = (now - last) / 1e9f
       last = now
       branchCats.values.forEach { it.tick(dt) }
+      idleCats.values.forEach { it.tick(dt) }
       frameTime = now
       delay(16L)
     }
@@ -302,12 +342,8 @@ fun InfiniteSceneScreen(
             val nd = wf.nodes.firstOrNull { it.id == id } ?: return null
             return footprintForNode(wf, nd, prefs, CELL)
           }
-          fun cellOfId(id: String): Pair<Int, Int>? {
-            val rect = rectOfId(id) ?: return null
-            return rect.left to rect.top
-          }
           val destRect = rectOfId(ev.nodeId) ?: return@collect
-          val (destCx, destCy) = destRect.left to destRect.top
+          val (destEntryX, destEntryY) = entryCellOf(destRect)
           val destCenter = centerBelow(destRect, CELL)
 
           val cat = branchCats[key] ?: run {
@@ -337,33 +373,50 @@ fun InfiniteSceneScreen(
             chain.toList()
           }
 
-          // Build the waypoint list: rasterise every edge of the chain so the bunny walks
-          // over EACH intermediate task's cell — guaranteeing it follows the full dirt
-          // trail even if upstream tasks finished before it arrived.
+          // Build the waypoint list: every edge goes exit(from) → entry(to), and every
+          // intermediate node is traversed along its bottom row from entry to exit so the
+          // bunny never cuts corners across a multi-cell task.
           val waypoints = ArrayList<Offset>()
+          fun cellCenter(cx: Int, cy: Int) =
+            Offset(cx * CELL + CELL / 2f, cy * CELL + CELL / 2f)
           if (chainIds.size >= 2) {
             for (i in 0 until chainIds.size - 1) {
-              val (ax, ay) = cellOfId(chainIds[i]) ?: continue
-              val (bx, by) = cellOfId(chainIds[i + 1]) ?: continue
-              val cells = manhattanPathCells(ax, ay, bx, by)
-              cells.forEachIndexed { idx, (cx, cy) ->
+              val fromRect = rectOfId(chainIds[i]) ?: continue
+              val toRect = rectOfId(chainIds[i + 1]) ?: continue
+              val (ax, ay) = exitCellOf(fromRect)
+              val (bx, by) = entryCellOf(toRect)
+              val segCells = manhattanPathCells(ax, ay, bx, by)
+              segCells.forEachIndexed { idx, (cx, cy) ->
                 // Drop the first cell of every segment except the very first so we don't
                 // insert a duplicate waypoint at each corner.
                 if (i > 0 && idx == 0) return@forEachIndexed
-                waypoints += if (i == chainIds.size - 2 && idx == cells.lastIndex)
-                  destCenter
-                else
-                  Offset(cx * CELL + CELL / 2f, cy * CELL + CELL / 2f)
+                waypoints += cellCenter(cx, cy)
+              }
+              // Multi-cell intermediate node: walk along its bottom row to its exit cell
+              // before starting the next segment.
+              if (i < chainIds.size - 2) {
+                val (nx, ny) = exitCellOf(toRect)
+                if (nx != bx || ny != by) {
+                  val stepX = if (nx > bx) 1 else -1
+                  var cx = bx + stepX
+                  while ((stepX > 0 && cx <= nx) || (stepX < 0 && cx >= nx)) {
+                    waypoints += cellCenter(cx, ny)
+                    cx += stepX
+                  }
+                }
               }
             }
+            // Replace the last inserted waypoint with the visual centre below the target.
+            if (waypoints.isNotEmpty()) waypoints[waypoints.lastIndex] = destCenter
+            else waypoints += destCenter
           } else {
-            // Single-node chain: straight walk from wherever the cat currently is.
+            // Single-node chain: walk from wherever the cat is, through the target's entry
+            // cell, to the visual centre below it.
             val curCx = kotlin.math.floor(cat.position.x / CELL).toInt()
             val curCy = kotlin.math.floor(cat.position.y / CELL).toInt()
-            val cells = manhattanPathCells(curCx, curCy, destCx, destCy)
+            val cells = manhattanPathCells(curCx, curCy, destEntryX, destEntryY)
             cells.forEachIndexed { idx, (cx, cy) ->
-              waypoints += if (idx == cells.lastIndex) destCenter
-              else Offset(cx * CELL + CELL / 2f, cy * CELL + CELL / 2f)
+              waypoints += if (idx == cells.lastIndex) destCenter else cellCenter(cx, cy)
             }
           }
           cat.walkPath(
@@ -396,6 +449,39 @@ fun InfiniteSceneScreen(
         is RunEvent.Finished -> activeByFlow[wfId] = null
       }
     }
+  }
+
+  // ---- Idle-cat syncing -----------------------------------------------------------------------
+  // The "waiting" bunny at every flow's root must never teleport when the root task is moved,
+  // added, or when the user drags the whole flow: it always RUNS to the new spot along a
+  // Manhattan path. Spawning is the only moment we allow a jumpTo (there is no prior position
+  // to walk from). Flows removed from the workspace drop their idle cat so the map can't leak.
+  LaunchedEffect(flows, prefs) {
+    val liveIds = HashSet<String>(flows.size)
+    flows.forEach { wf ->
+      liveIds += wf.id
+      val root = wf.roots().firstOrNull() ?: return@forEach
+      val rootRect = footprintForNode(wf, root, prefs, CELL)
+      val rootCenter = centerBelow(rootRect, CELL)
+      val existing = idleCats[wf.id]
+      if (existing == null) {
+        idleCats[wf.id] = CatActor(rootCenter).also { it.jumpTo(rootCenter) }
+      } else if (existing.target != rootCenter) {
+        val curCx = kotlin.math.floor(existing.position.x / CELL).toInt()
+        val curCy = kotlin.math.floor(existing.position.y / CELL).toInt()
+        // Route through the root's entry cell (left face of the bottom-left cell) so the
+        // bunny always slides in from the side, even when the user drags the root task.
+        val (entryX, entryY) = entryCellOf(rootRect)
+        val cells = manhattanPathCells(curCx, curCy, entryX, entryY)
+        val wps = cells.mapIndexed { i, (cx, cy) ->
+          if (i == cells.lastIndex) rootCenter
+          else Offset(cx * CELL + CELL / 2f, cy * CELL + CELL / 2f)
+        }
+        existing.walkPath(wps)
+      }
+    }
+    // Prune idle cats belonging to flows that no longer exist.
+    (idleCats.keys - liveIds).toList().forEach { idleCats.remove(it) }
   }
 
   fun worldFromScreen(p: Offset): Offset = Offset((p.x - camX) / scale, (p.y - camY) / scale)
@@ -434,8 +520,10 @@ fun InfiniteSceneScreen(
 
   // Path rasterization and node occupancy only change when the workflows change —
   // NOT every animation frame. Memoizing them keeps per-frame cost at O(visible_cells).
-  val pathCells = remember(flows) {
-    rasterizeWorkflowPaths(flows = flows, cellSize = CELL)
+  val pathCells = remember(flows, prefs) {
+    rasterizeWorkflowPaths(flows = flows, cellSize = CELL) { wf, n ->
+      footprintForNode(wf, n, prefs, CELL)
+    }
   }
   val nodeCells = remember(flows, prefs) {
     val set = HashSet<Long>()
@@ -529,14 +617,16 @@ fun InfiniteSceneScreen(
                   // decision by `catCurrentNode` (authoritative) rather than proximity, so
                   // the bunny follows even when the user drags a distant task.
                   val prefix = "${wf.id}|"
-                  val newCenter = centerBelow(footprintForCell(targetCx, targetCy, spec), CELL)
+                  val newRect = footprintForCell(targetCx, targetCy, spec)
+                  val newCenter = centerBelow(newRect, CELL)
+                  val (entryX, entryY) = entryCellOf(newRect)
                   branchCats.entries
                     .filter { it.key.startsWith(prefix) &&
                       catCurrentNode[it.key] == n.id }
                     .forEach { (_, cat) ->
                       val curCx = kotlin.math.floor(cat.position.x / CELL).toInt()
                       val curCy = kotlin.math.floor(cat.position.y / CELL).toInt()
-                      val cells = manhattanPathCells(curCx, curCy, targetCx, targetCy)
+                      val cells = manhattanPathCells(curCx, curCy, entryX, entryY)
                       val wps = cells.mapIndexed { i, (cx, cy) ->
                         if (i == cells.lastIndex) newCenter
                         else Offset(cx * CELL + CELL / 2f, cy * CELL + CELL / 2f)
@@ -713,10 +803,15 @@ fun InfiniteSceneScreen(
         val catsToDraw: List<CatActor> = if (liveKeys.isNotEmpty()) {
           liveKeys.mapNotNull { branchCats[it] }
         } else {
-          // Idle bunny at the root node (first node without predecessors).
-          val root = wf.roots().firstOrNull() ?: return@forEach
-          val pos = centerBelow(footprintForNode(wf, root, prefs, CELL), CELL)
-          listOf(CatActor(pos))
+          // Persistent idle bunny: kept in `idleCats` so moving the root task animates
+          // the walk instead of teleporting. Falls back to a fresh actor on the very first
+          // frame before the syncing LaunchedEffect has had a chance to populate the map.
+          val idle = idleCats[wf.id] ?: run {
+            val root = wf.roots().firstOrNull() ?: return@forEach
+            val pos = centerBelow(footprintForNode(wf, root, prefs, CELL), CELL)
+            CatActor(pos)
+          }
+          listOf(idle)
         }
         catsToDraw.forEach { cat ->
           val sheet = when (cat.state) {
@@ -777,9 +872,12 @@ fun InfiniteSceneScreen(
         onEdit = { showInspector = true },
         onAddTarget = { paletteTarget = it },
         onDismiss = { clearSelection() },
-        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
-      )
-    }
+        modifier = Modifier
+          .align(Alignment.BottomCenter)
+          .navigationBarsPadding()
+          .padding(16.dp),
+       )
+     }
 
     // ---------- INSPECTOR (only when explicitly requested) ----------
     if (showInspector) {
@@ -797,21 +895,29 @@ fun InfiniteSceneScreen(
         vm = vm,
         target = target,
         onPicked = { capId ->
-          when (target) {
-            is PaletteTarget.NewFlow -> {
-              val wf = vm.newWorkflowAt(target.worldSpawn)
-              vm.addNodeAfter(wf.id, capId, x = 0f, y = 0f, afterNodeId = null)
+          val cap = vm.registry.get(capId)
+          val add = addTask@{
+            when (target) {
+              is PaletteTarget.NewFlow -> {
+                val wf = vm.newWorkflowAt(target.worldSpawn)
+                vm.addNodeAfter(wf.id, capId, x = 0f, y = 0f, afterNodeId = null)
+              }
+              is PaletteTarget.AppendAfter -> {
+                val wf = vm.repository.get(target.flowId) ?: return@addTask
+                val prev = wf.nodes.firstOrNull { it.id == target.afterNodeId }
+                val nx = (prev?.x ?: 0f) + CELL * 2
+                val ny = prev?.y ?: 0f
+                vm.addNodeAfter(target.flowId, capId, x = nx, y = ny,
+                  afterNodeId = target.afterNodeId)
+              }
             }
-            is PaletteTarget.AppendAfter -> {
-              val wf = vm.repository.get(target.flowId) ?: return@PaletteSheet
-              val prev = wf.nodes.firstOrNull { it.id == target.afterNodeId }
-              val nx = (prev?.x ?: 0f) + CELL * 2
-              val ny = prev?.y ?: 0f
-              vm.addNodeAfter(target.flowId, capId, x = nx, y = ny,
-                afterNodeId = target.afterNodeId)
-            }
+            paletteTarget = null
           }
-          paletteTarget = null
+          if (cap == null || (cap.requiredPermissions.isEmpty() && cap.id !in PERMISSION_BOUND_CAP_IDS)) {
+            add()
+          } else {
+            pendingAddCapability = cap to add
+          }
         },
         onDismiss = { paletteTarget = null },
       )
@@ -836,6 +942,10 @@ fun InfiniteSceneScreen(
       AssetGallerySheet(
         vm = vm,
         onboarding = onboardingMode,
+        initialScrollToCapId = pinnedGalleryCapId,
+        initialHighlightAssetId = pinnedGalleryAssetId,
+        onPinnedCapIdChanged = { pinnedGalleryCapId = it },
+        onPinnedAssetIdChanged = { pinnedGalleryAssetId = it },
         onDismiss = {
           galleryOpen = false
           if (onboardingMode) {
@@ -845,6 +955,64 @@ fun InfiniteSceneScreen(
           }
         },
       )
+    }
+
+    // ---------- FLOATING MENU ICON COLUMN (top-left, over the scene, no background) ----------
+    // Replaces the removed global top app bar: back, gallery, history stacked vertically with
+    // identical styling — bare icons on top of the pixel scene, no container or tint surface.
+    Column(
+      modifier = Modifier
+        .align(Alignment.TopStart)
+        .padding(start = 4.dp, top = 0.dp),
+      verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+      androidx.compose.material3.IconButton(onClick = onNavigateUp) {
+        Icon(
+          Icons.Outlined.ArrowBack,
+          contentDescription = "Volver",
+          tint = TopBarBackTint,
+        )
+      }
+      androidx.compose.material3.IconButton(
+        onClick = { onboardingMode = false; galleryOpen = true },
+      ) {
+        Icon(
+          Icons.Outlined.Collections,
+          contentDescription = "Abrir galería de assets",
+          tint = TopBarGalleryTint,
+        )
+      }
+      androidx.compose.material3.IconButton(onClick = { historyOpen = true }) {
+        Icon(
+          Icons.Outlined.Notifications,
+          contentDescription = "Historial de acciones",
+          tint = TopBarHistoryTint,
+        )
+      }
+    }
+    if (historyOpen) {
+      val log = remember { com.google.ai.edge.gallery.customtasks.stocatstic.data.DangerousActionLog.shared }
+      if (log != null) {
+        com.google.ai.edge.gallery.customtasks.stocatstic.ui.history.DangerousActionHistorySheet(
+          log = log, onDismiss = { historyOpen = false },
+        )
+      } else historyOpen = false
+    }
+
+    // ---------- PERMISSION PROMPT AT TASK CREATION ----------
+    // Captured when the user picks a capability that requires permissions or special access;
+    // consumed by the requester composable below which shows the system dialog and only then
+    // runs the "add node" lambda.
+    pendingAddCapability?.let { (cap, add) ->
+      val requester = com.google.ai.edge.gallery.customtasks.stocatstic.ui.permissions
+        .rememberCapabilityPermissionRequester(
+          onDenied = { pendingAddCapability = null },
+          onGranted = {
+            pendingAddCapability = null
+            add()
+          },
+        )
+      LaunchedEffect(cap.id) { requester(cap) }
     }
   }
 }
@@ -1016,6 +1184,8 @@ private fun InspectorSheet(
   val node = wf.nodes.firstOrNull { it.id == selectedNodeId } ?: return
   val cap = vm.registry.get(node.capabilityId) ?: return
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+  // Key of the SPECIAL param currently being edited through the dedicated AI sheet (null = none).
+  var aiEditingKey by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
   ModalBottomSheet(
     onDismissRequest = onClose,
     sheetState = sheetState,
@@ -1093,47 +1263,32 @@ private fun InspectorSheet(
           }
         } else {
           items(cap.params) { p ->
-            val cur = (node.config[p.key] as? JsonPrimitive)?.content.orEmpty()
-            Column {
-              Text(
-                p.label, color = PixelPalette.onDark,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
-              )
-              Box(
-                Modifier
-                  .fillMaxWidth()
-                  .padding(top = 4.dp)
-                  .clip(RoundedCornerShape(12.dp))
-                  .background(PixelPalette.softGlow.copy(alpha = 0.75f))
-                  .padding(horizontal = 12.dp, vertical = 10.dp),
-              ) {
-                BasicTextField(
-                  value = cur,
-                  onValueChange = { newText ->
-                    val newVal = when (p.kind) {
-                      ValueKind.INT, ValueKind.LONG, ValueKind.DURATION_MS ->
-                        newText.toLongOrNull()?.let { JsonPrimitive(it) }
-                          ?: JsonPrimitive(newText)
-                      ValueKind.DOUBLE ->
-                        newText.toDoubleOrNull()?.let { JsonPrimitive(it) }
-                          ?: JsonPrimitive(newText)
-                      ValueKind.BOOL -> JsonPrimitive(newText.equals("true", true))
-                      else -> JsonPrimitive(newText)
-                    }
-                    vm.updateNodeConfig(
-                      wf.id, node.id, JsonObject(node.config + (p.key to newVal)),
-                    )
-                  },
-                  textStyle = TextStyle(
-                    color = PixelPalette.onDark, fontSize = 14.sp,
-                  ),
-                  cursorBrush = SolidColor(PixelPalette.moon),
+            val cur = node.config[p.key]
+            com.google.ai.edge.gallery.customtasks.stocatstic.ui.inspector.ParamField(
+              spec = p,
+              value = cur,
+              onChange = { newVal ->
+                vm.updateNodeConfig(
+                  wf.id, node.id, JsonObject(node.config + (p.key to newVal)),
                 )
-              }
-            }
+              },
+              onSpecial = { aiEditingKey = p.key },
+            )
           }
         }
+      }
+      // AI multimodal editor -----------------------------------------------------------------
+      aiEditingKey?.let { key ->
+        val initial = (node.config[key] as? JsonObject) ?: JsonObject(emptyMap())
+        com.google.ai.edge.gallery.customtasks.stocatstic.ui.ai.AiNodeConfigSheet(
+          initialConfig = initial,
+          onSave = { saved ->
+            vm.updateNodeConfig(
+              wf.id, node.id, JsonObject(node.config + (key to saved)),
+            )
+          },
+          onDismiss = { aiEditingKey = null },
+        )
       }
       // Sticky footer -------------------------------------------------------------------------
       HorizontalDivider(

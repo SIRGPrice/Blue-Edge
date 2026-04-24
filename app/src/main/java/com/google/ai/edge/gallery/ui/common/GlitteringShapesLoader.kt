@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.common
-
+
+import com.google.ai.edge.gallery.R
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -43,7 +44,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.ui.theme.customColors
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -158,3 +158,4 @@ private fun Particle(shape: Shape, boxSize: IntSize) {
     contentScale = ContentScale.Fit,
   )
 }
+

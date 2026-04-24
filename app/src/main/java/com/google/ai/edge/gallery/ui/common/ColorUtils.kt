@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,3 +46,4 @@ fun getTaskIconColor(index: Int): Color {
   val colorIndex: Int = (index.coerceAtLeast(0)) % MaterialTheme.customColors.taskIconColors.size
   return MaterialTheme.customColors.taskIconColors[colorIndex]
 }
+

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -32,4 +32,5 @@ sealed class RunEvent {
   data class Finished(override val workflowId: String, override val runId: String,
     val success: Boolean, override val ts: Long = System.currentTimeMillis()) : RunEvent()
 }
+
 

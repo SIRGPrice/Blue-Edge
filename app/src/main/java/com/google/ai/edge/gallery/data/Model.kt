@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,7 +52,7 @@ enum class AICoreModelPreference {
  * A model for a task (see [Task]).
  *
  * A task can have multiple models. For example, a task might be "LLM Chat", and it might have
- * models such as Gemma2, Gemma3, etc.
+ * models such as Gemma 4 E2B and Gemma 4 E4B.
  */
 data class Model(
   /**
@@ -375,3 +375,4 @@ data class ModelDownloadStatus(
 
 val EMPTY_MODEL: Model =
   Model(name = "empty", downloadFileName = "empty.tflite", url = "", sizeInBytes = 0L)
+

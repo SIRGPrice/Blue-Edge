@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,7 +80,7 @@ class ConversationModeTts(
     }
   }
 
-  /** Called when generation is done — flush remaining buffer. */
+  /** Called when generation is done â€” flush remaining buffer. */
   fun flush() {
     val remaining = buffer.toString().trim()
     if (remaining.isNotEmpty() && isInitialized) {
@@ -101,3 +101,4 @@ class ConversationModeTts(
     tts = null
   }
 }
+

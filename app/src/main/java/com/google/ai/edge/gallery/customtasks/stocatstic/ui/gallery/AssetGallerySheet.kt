@@ -28,11 +28,14 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items as rowItems
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -102,12 +105,30 @@ fun AssetGallerySheet(
   vm: StocatsticViewModel,
   onboarding: Boolean,
   onDismiss: () -> Unit,
+  /**
+   * Initial capability the Tareas tab should scroll to on open. When the user picks a task
+   * result we report the new id via [onPinnedCapIdChanged] so the caller can persist it —
+   * that way closing and reopening the sheet restores the same position.
+   */
+  initialScrollToCapId: String? = null,
+  initialHighlightAssetId: String? = null,
+  onPinnedCapIdChanged: (String?) -> Unit = {},
+  onPinnedAssetIdChanged: (String?) -> Unit = {},
 ) {
   val prefs by vm.preferences.collectAsState()
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val tabs = listOf("Personaje", "Inicio", "Camino", "Tareas")
-  var tab by rememberSaveable { mutableStateOf(0) }
+  var tab by rememberSaveable { mutableStateOf(if (initialScrollToCapId != null || initialHighlightAssetId != null) 3 else 0) }
   var query by rememberSaveable { mutableStateOf("") }
+  // Two-icon search: user chooses which kind of result dropdown to show. null = plain
+  // filter-only mode (backwards compatible).
+  var searchMode by rememberSaveable { mutableStateOf<String?>(null) } // "task" | "asset" | null
+  // Pinned scroll targets — seeded from the hoisted state so they persist across reopens.
+  // Picking a task sets [scrollToCapId] and leaves [highlightAssetId] untouched (and vice
+  // versa) so the user can refine both axes independently: search a task, then an asset,
+  // and both positions are remembered together.
+  var scrollToCapId by remember { mutableStateOf(initialScrollToCapId) }
+  var highlightAssetId by remember { mutableStateOf(initialHighlightAssetId) }
 
   val canFinish = prefs.characterId.isNotBlank() && prefs.pathAssetId.isNotBlank()
 
@@ -157,8 +178,38 @@ fun AssetGallerySheet(
         }
       }
       Spacer(Modifier.size(10.dp))
-      // --- Search bar (filters every tab) --------------------------------------------------
-      GallerySearchBar(query = query, onQueryChange = { query = it })
+      // --- Search bar (filters every tab, plus two icon buttons for scoped search) ---------
+      GallerySearchBar(
+        query = query,
+        onQueryChange = { query = it },
+        searchMode = searchMode,
+        onSearchModeChange = { searchMode = it },
+      )
+      // Scoped search results dropdown — appears only when a mode is active AND there is a
+      // query. Clicking a result jumps the gallery to the relevant spot and closes the list.
+      if (searchMode != null && query.isNotBlank()) {
+        Spacer(Modifier.size(6.dp))
+        SearchResultList(
+          mode = searchMode!!,
+          query = query,
+          vm = vm,
+          onPickTask = { cap ->
+            tab = 3
+            scrollToCapId = cap.id
+            onPinnedCapIdChanged(cap.id)
+            // Keep the currently pinned asset highlight so task+asset positions combine.
+            query = ""
+            searchMode = null
+          },
+          onPickAsset = { entry ->
+            tab = 3
+            highlightAssetId = entry.id
+            onPinnedAssetIdChanged(entry.id)
+            query = ""
+            searchMode = null
+          },
+        )
+      }
       Spacer(Modifier.size(10.dp))
       Box(Modifier.heightIn(min = 240.dp, max = 520.dp)) {
         when (tab) {
@@ -177,7 +228,13 @@ fun AssetGallerySheet(
             consumedIds = emptyMap(),
             onPick = { vm.preferencesStore.setPath(it.id) },
           )
-          else -> TasksTab(vm = vm, prefs = prefs, query = query)
+          else -> TasksTab(
+            vm = vm,
+            prefs = prefs,
+            query = query,
+            scrollToCapId = scrollToCapId,
+            highlightAssetId = highlightAssetId,
+          )
         }
       }
       if (onboarding) {
@@ -197,15 +254,27 @@ fun AssetGallerySheet(
   }
 }
 
-/** Reusable sticky search bar used at the top of the gallery. */
+/**
+ * Reusable sticky search bar used at the top of the gallery. Besides plain text filtering it
+ * offers two toggleable icon buttons that drive SCOPED search:
+ *   • 📋 Tasks: shows a dropdown with the most similar capabilities; picking one jumps the
+ *     gallery to that task inside the "Tareas" tab.
+ *   • 🖼 Assets: shows a dropdown with the most similar sprites; picking one scrolls every
+ *     horizontal task catalog until the asset is visible, highlighting it in the process.
+ */
 @Composable
-private fun GallerySearchBar(query: String, onQueryChange: (String) -> Unit) {
+private fun GallerySearchBar(
+  query: String,
+  onQueryChange: (String) -> Unit,
+  searchMode: String?,
+  onSearchModeChange: (String?) -> Unit,
+) {
   Row(
     Modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(12.dp))
       .background(PixelPalette.softGlow.copy(alpha = 0.65f))
-      .padding(horizontal = 12.dp, vertical = 10.dp),
+      .padding(horizontal = 12.dp, vertical = 6.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Icon(Icons.Outlined.Search, null, tint = PixelPalette.onDarkMuted,
@@ -213,8 +282,13 @@ private fun GallerySearchBar(query: String, onQueryChange: (String) -> Unit) {
     Spacer(Modifier.width(8.dp))
     Box(Modifier.weight(1f)) {
       if (query.isEmpty()) {
+        val placeholder = when (searchMode) {
+          "task" -> "Buscar tareas…"
+          "asset" -> "Buscar assets…"
+          else -> "Buscar asset…"
+        }
         Text(
-          "Buscar asset…",
+          placeholder,
           color = PixelPalette.onDarkMuted,
           style = MaterialTheme.typography.bodyMedium,
         )
@@ -229,9 +303,172 @@ private fun GallerySearchBar(query: String, onQueryChange: (String) -> Unit) {
       )
     }
     if (query.isNotEmpty()) {
-      IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(22.dp)) {
+      IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(26.dp)) {
         Icon(Icons.Outlined.Close, null, tint = PixelPalette.onDarkMuted,
-          modifier = Modifier.size(18.dp))
+          modifier = Modifier.size(16.dp))
+      }
+    }
+    // Scope toggles — two icon buttons, tap again to deactivate.
+    ScopeIconButton(
+      active = searchMode == "task",
+      icon = Icons.Outlined.Category,
+      contentDescription = "Buscar tareas",
+      onClick = {
+        onSearchModeChange(if (searchMode == "task") null else "task")
+      },
+    )
+    ScopeIconButton(
+      active = searchMode == "asset",
+      icon = Icons.Outlined.Image,
+      contentDescription = "Buscar assets",
+      onClick = {
+        onSearchModeChange(if (searchMode == "asset") null else "asset")
+      },
+    )
+  }
+}
+
+@Composable
+private fun ScopeIconButton(
+  active: Boolean,
+  icon: androidx.compose.ui.graphics.vector.ImageVector,
+  contentDescription: String,
+  onClick: () -> Unit,
+) {
+  Box(
+    Modifier
+      .size(32.dp)
+      .clip(RoundedCornerShape(8.dp))
+      .background(if (active) PixelPalette.moon.copy(alpha = 0.35f) else Color.Transparent)
+      .clickable(onClick = onClick),
+    contentAlignment = Alignment.Center,
+  ) {
+    Icon(
+      icon,
+      contentDescription = contentDescription,
+      tint = if (active) PixelPalette.onDark else PixelPalette.onDarkMuted,
+      modifier = Modifier.size(18.dp),
+    )
+  }
+}
+
+/**
+ * Ranks catalog entries by how well [query] matches their label (case-insensitive). Entries
+ * whose label STARTS with the query outrank substring matches. Returns the top [limit] hits.
+ */
+private fun <T> rankByLabel(
+  entries: List<T>,
+  query: String,
+  limit: Int = 8,
+  labelOf: (T) -> String,
+): List<T> {
+  if (query.isBlank()) return emptyList()
+  val q = query.trim().lowercase()
+  val scored = entries.mapNotNull { e ->
+    val l = labelOf(e).lowercase()
+    val score = when {
+      l == q -> 0
+      l.startsWith(q) -> 1
+      l.contains(q) -> 2
+      else -> return@mapNotNull null
+    }
+    e to score
+  }
+  return scored.sortedBy { it.second }.take(limit).map { it.first }
+}
+
+/** Scoped-search results dropdown. Renders under the search bar when a mode is active. */
+@Composable
+private fun SearchResultList(
+  mode: String,
+  query: String,
+  vm: StocatsticViewModel,
+  onPickTask: (com.google.ai.edge.gallery.customtasks.stocatstic.domain.Capability) -> Unit,
+  onPickAsset: (com.google.ai.edge.gallery.customtasks.stocatstic.ui.assets.GalleryEntry) -> Unit,
+) {
+  val ctx = LocalContext.current
+  Column(
+    Modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(10.dp))
+      .background(PixelPalette.softGlow.copy(alpha = 0.35f))
+      .padding(4.dp),
+  ) {
+    if (mode == "task") {
+      val caps = remember { vm.registry.all() }
+      val hits = remember(query, caps) { rankByLabel(caps, query) { it.label } }
+      if (hits.isEmpty()) {
+        Text("Sin coincidencias", color = PixelPalette.onDarkMuted,
+          fontSize = 12.sp, modifier = Modifier.padding(8.dp))
+      } else hits.forEach { cap ->
+        Row(
+          Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onPickTask(cap) }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Box(
+            Modifier
+              .size(24.dp)
+              .clip(RoundedCornerShape(6.dp))
+              .background(cap.category.color.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center,
+          ) { Icon(cap.icon, null, tint = cap.category.color, modifier = Modifier.size(14.dp)) }
+          Spacer(Modifier.width(8.dp))
+          Column(Modifier.weight(1f)) {
+            Text(cap.label, color = PixelPalette.onDark, fontSize = 13.sp,
+              fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(cap.category.label, color = PixelPalette.onDarkMuted, fontSize = 10.sp,
+              maxLines = 1)
+          }
+        }
+      }
+    } else { // asset
+      val resolved = remember {
+        TaskSpriteCatalog.ENTRIES.mapNotNull { e ->
+          val bmp = SpriteAssets.load(ctx, e.assetPath) ?: return@mapNotNull null
+          val preview = previewFor(e, bmp) ?: return@mapNotNull null
+          Triple(e, bmp, preview)
+        }
+      }
+      val hits = remember(query, resolved) {
+        rankByLabel(resolved, query) { it.first.label }
+      }
+      if (hits.isEmpty()) {
+        Text("Sin coincidencias", color = PixelPalette.onDarkMuted,
+          fontSize = 12.sp, modifier = Modifier.padding(8.dp))
+      } else hits.forEach { (e, bmp, preview) ->
+        Row(
+          Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onPickAsset(e) }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Box(
+            Modifier
+              .size(32.dp)
+              .clip(RoundedCornerShape(6.dp))
+              .background(PixelPalette.deepSky),
+            contentAlignment = Alignment.Center,
+          ) {
+            Image(
+              painter = BitmapPainter(
+                image = bmp, srcOffset = preview.offset, srcSize = preview.size,
+                filterQuality = FilterQuality.None,
+              ),
+              contentDescription = e.label,
+              modifier = Modifier.size(28.dp),
+              contentScale = ContentScale.Fit,
+            )
+          }
+          Spacer(Modifier.width(8.dp))
+          Text(e.label, color = PixelPalette.onDark, fontSize = 13.sp,
+            fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.weight(1f))
+        }
       }
     }
   }
@@ -326,10 +563,12 @@ private fun CharacterPreview(ch: CharacterEntry) {
         activeStrip === strips.firstOrNull() -> localTick.coerceAtMost(cols - 1)
         else -> (localTick % cols).coerceAtMost(cols - 1)
       }
+      // Row 3 of the Little Dreamyland sheet = front-facing (looking AT the user); use it so
+      // the gallery preview shows the character's face instead of its back.
       Image(
         painter = BitmapPainter(
           image = bmp,
-          srcOffset = IntOffset(frame * frameW, 0),
+          srcOffset = IntOffset(frame * frameW, 3 * frameH),
           srcSize = IntSize(frameW, frameH),
           filterQuality = FilterQuality.None,
         ),
@@ -483,12 +722,29 @@ private fun GalleryEntryCell(
  * a horizontal strip of [TaskSpriteCatalog] entries the user can tap to override the default
  * sprite. The currently selected entry for every capability auto-scrolls to the horizontal
  * centre of its row so the user immediately sees what's picked.
+ *
+ * [scrollToCapId] — when non-null, the outer list scrolls that capability row into view
+ * (persistent: the caller may leave it set so reopening the sheet restores the position).
+ * [highlightAssetId] — when non-null, every inner horizontal catalog scrolls to show the
+ * given asset id (overrides the usual "scroll to the currently-picked sprite" behaviour).
+ *
+ * Performance notes (April 2026):
+ *   • The resolved+preview bitmap list is computed ONCE per composition; bitmaps are cached
+ *     in [SpriteAssets], so subsequent reopens are essentially free.
+ *   • The "consumed" map (entry-id → owner-task-label) is computed ONCE at this level — not
+ *     per row — and now reflects DEFAULT assignments too, not only explicit overrides. An
+ *     asset is considered consumed as soon as some OTHER capability is currently using it,
+ *     regardless of whether the user customised that capability.
+ *   • Each row's LazyListState is hoisted into a shared map keyed by capability id so it
+ *     survives Lazy*Grid recycling → no more redundant auto-scroll thrashing when scrolling.
  */
 @Composable
 private fun TasksTab(
   vm: StocatsticViewModel,
   prefs: StocatsticPreferences,
   query: String,
+  scrollToCapId: String? = null,
+  highlightAssetId: String? = null,
 ) {
   val ctx = LocalContext.current
   val caps = remember { vm.registry.all() }
@@ -510,23 +766,35 @@ private fun TasksTab(
         it.category.label.contains(query, ignoreCase = true)
     }
   }
+  // Global "who uses which sprite" map, built ONCE per prefs change. For each capability we
+  // consider the EFFECTIVE entry id — i.e. the override if any, otherwise the registry
+  // default. This means an asset is marked "En uso" even when a capability is using it by
+  // default, not only when the user explicitly assigned it.
+  val consumerByEntry: Map<String, String> = remember(caps, prefs.taskOverrides) {
+    val res = HashMap<String, String>(caps.size)
+    caps.forEach { c ->
+      val entry = prefs.taskOverrides[c.id] ?: TaskSpriteRegistry.defaultEntryId(c.id)
+      // First writer wins: deterministic and independent of capability order.
+      res.putIfAbsent(entry, c.label)
+    }
+    res
+  }
+  // Hoisted per-row LazyListState map so state survives recycling inside the outer grid.
+  val rowStates = remember { HashMap<String, androidx.compose.foundation.lazy.LazyListState>() }
+  val gridState = rememberLazyGridState()
+  LaunchedEffect(scrollToCapId, filteredCaps) {
+    val id = scrollToCapId ?: return@LaunchedEffect
+    val idx = filteredCaps.indexOfFirst { it.id == id }
+    if (idx >= 0) runCatching { gridState.scrollToItem(idx) }
+  }
   LazyVerticalGrid(
+    state = gridState,
     columns = GridCells.Fixed(1),
     contentPadding = PaddingValues(4.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
     gridItems(filteredCaps, key = { it.id }) { cap ->
       val effectiveId = prefs.taskOverrides[cap.id] ?: TaskSpriteRegistry.defaultEntryId(cap.id)
-      val consumed = remember(prefs.taskOverrides, cap.id) {
-        // Collect consumer LABELS (not capability ids) so the toast is user-friendly.
-        val res = HashMap<String, String>()
-        prefs.taskOverrides.forEach { (capId, entryId) ->
-          if (capId == cap.id) return@forEach
-          val label = vm.registry.get(capId)?.label ?: capId
-          res.putIfAbsent(entryId, label)
-        }
-        res
-      }
       Column(
         Modifier
           .fillMaxWidth()
@@ -561,26 +829,33 @@ private fun TasksTab(
           }
         }
         Spacer(Modifier.size(6.dp))
-        val currentLabel =
-          filteredEntries.firstOrNull { it.first.id == effectiveId }?.first?.label
+        val currentLabel = remember(effectiveId, resolvedEntries) {
+          resolvedEntries.firstOrNull { it.first.id == effectiveId }?.first?.label
             ?: TaskSpriteCatalog.ENTRIES.firstOrNull { it.id == effectiveId }?.label
             ?: "Por defecto"
+        }
         Text(
           "Actual: $currentLabel",
           color = PixelPalette.onDarkMuted, fontSize = 11.sp,
           modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
         )
-        // Per-row LazyRow state so we can scroll the preselected entry to the horizontal centre.
-        val rowState = rememberLazyListState()
+        // Per-row LazyRow state, shared via [rowStates] so it persists across grid recycling.
+        val rowState = rowStates.getOrPut(cap.id) {
+          androidx.compose.foundation.lazy.LazyListState()
+        }
         val density = LocalDensity.current
         BoxWithConstraints(Modifier.fillMaxWidth()) {
           val viewportPx = with(density) { maxWidth.toPx() }.toInt()
-          val cellPx = with(density) { 80.dp.toPx() }.toInt() // ≈ cell + spacing (see 6.dp + 8+56).
-          val selectedIndex = filteredEntries.indexOfFirst { it.first.id == effectiveId }
-          LaunchedEffect(effectiveId, filteredEntries.size, viewportPx) {
-            if (selectedIndex >= 0 && viewportPx > 0) {
+          val cellPx = with(density) { 80.dp.toPx() }.toInt()
+          val targetId = highlightAssetId ?: effectiveId
+          // Key intentionally excludes filteredEntries.size / viewportPx to avoid re-scrolling
+          // on unrelated recompositions (e.g. prefs updates that don't change the target).
+          LaunchedEffect(cap.id, targetId) {
+            if (viewportPx <= 0) return@LaunchedEffect
+            val idx = filteredEntries.indexOfFirst { it.first.id == targetId }
+            if (idx >= 0) {
               val offset = -(viewportPx / 2 - cellPx / 2)
-              runCatching { rowState.scrollToItem(selectedIndex, offset) }
+              runCatching { rowState.scrollToItem(idx, offset) }
             }
           }
           LazyRow(
@@ -589,10 +864,15 @@ private fun TasksTab(
           ) {
             rowItems(filteredEntries, key = { it.first.id }) { (e, bmp, preview) ->
               val sel = effectiveId == e.id
+              val highlighted = highlightAssetId != null && highlightAssetId == e.id
+              // A sprite is "consumed" iff some OTHER capability currently uses it (by
+              // default or override). This is exactly what [consumerByEntry] encodes.
+              val owner = consumerByEntry[e.id]
+              val consumerLabel = if (owner != null && owner != cap.label) owner else null
               GalleryEntryCell(
                 entry = e, bmp = bmp, preview = preview,
-                selected = sel,
-                consumerLabel = consumed[e.id],
+                selected = sel || highlighted,
+                consumerLabel = consumerLabel,
                 onClick = { vm.preferencesStore.setTaskOverride(cap.id, e.id) },
               )
             }

@@ -1,3 +1,6 @@
+﻿package com.google.ai.edge.gallery.ui.benchmark
+
+import com.google.ai.edge.gallery.R
 /*
  * Copyright 2026 Google LLC
  *
@@ -14,7 +17,6 @@
  * limitations under the License.
  */
 
-package com.google.ai.edge.gallery.ui.benchmark
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -84,7 +86,7 @@ fun BenchmarkModelPicker(
       modifier = Modifier.weight(1f, fill = false),
     )
     Icon(
-      Icons.Rounded.ArrowDropDown,
+      R.drawable.ic_a_rr_ow_dr_op_do_wn_24px,
       modifier = Modifier.size(20.dp).sizeIn(minWidth = 20.dp),
       contentDescription = null,
     )
@@ -122,7 +124,7 @@ fun BenchmarkModelPicker(
               horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
               Icon(
-                Icons.Rounded.CheckCircle,
+                R.drawable.ic_c_he_ck_ci_rc_le_24px,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.alpha(if (modelName == selectedModelName) 1f else 0f),
@@ -139,3 +141,5 @@ fun BenchmarkModelPicker(
     }
   }
 }
+
+

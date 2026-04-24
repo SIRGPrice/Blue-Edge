@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 package com.google.ai.edge.gallery.ui.common.textandvoiceinput
-
+
+import com.google.ai.edge.gallery.R
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -42,7 +43,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.ui.common.getTaskBgGradientColors
 import kotlin.coroutines.cancellation.CancellationException
@@ -135,3 +135,4 @@ fun HoldToDictate(
     }
   }
 }
+

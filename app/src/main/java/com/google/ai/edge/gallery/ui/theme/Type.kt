@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,13 @@
  */
 
 package com.google.ai.edge.gallery.ui.theme
-
+
+import com.google.ai.edge.gallery.R
 import androidx.compose.ui.text.font.Font
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.google.ai.edge.gallery.R
-
 val appFontFamily =
   FontFamily(
     Font(R.font.nunito_regular, FontWeight.Normal),
@@ -103,3 +102,4 @@ val headlineLargeMedium = baseline.headlineLarge.copy(fontWeight = FontWeight.Me
 
 val emptyStateTitle = baseline.headlineSmall.copy(fontSize = 37.sp, lineHeight = 50.sp)
 val emptyStateContent = baseline.headlineSmall.copy(fontSize = 16.sp, lineHeight = 22.sp)
+

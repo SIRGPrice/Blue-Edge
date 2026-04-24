@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -6,15 +6,16 @@ package com.google.ai.edge.gallery.customtasks.stocatstic.ui.scene
 
 import androidx.compose.ui.geometry.Offset
 import com.google.ai.edge.gallery.customtasks.stocatstic.domain.Workflow
+import com.google.ai.edge.gallery.customtasks.stocatstic.domain.WorkflowNode
 
 /**
  * Converts the logical workflow graph into a set of world-grid cells rendered as
  * dirt-path sprites on the terrain layer.
  *
- * Paths are **exactly one cell wide** and follow an orthogonal L-shape (Manhattan)
- * from the source node cell to the destination node cell: first horizontal, then
- * vertical. This yields clean, readable trails that look hand-authored rather than
- * the previous dilated Bézier curves.
+ * Paths are **exactly one cell wide** and follow an orthogonal L-shape (Manhattan).
+ * They always connect the **right face of the source node's bottom-right cell** to the
+ * **left face of the target node's bottom-left cell**, regardless of task size â€” so
+ * multi-cell tasks get their trail glued to the bottom row instead of the top-left cell.
  */
 
 /** Packs a (cellX, cellY) pair into a single Long key for use in HashSet<Long>. */
@@ -25,14 +26,14 @@ internal fun packCell(x: Int, y: Int): Long =
  * Rasterizes every edge of every workflow into a set of cells, at cell granularity.
  *
  * @param cellSize world units per cell (1 cell = 1 tile = minimum interaction unit).
- * @param nodeW node width in world units (kept for signature compatibility; unused).
- * @param nodeH node height in world units (kept for signature compatibility; unused).
+ * @param footprintOf resolver that maps a node to its rectangular footprint on the grid.
+ *   The path always exits from [exitCellOf] of the source footprint and enters at
+ *   [entryCellOf] of the target footprint.
  */
 fun rasterizeWorkflowPaths(
   flows: List<Workflow>,
   cellSize: Float,
-  @Suppress("UNUSED_PARAMETER") nodeW: Float = cellSize,
-  @Suppress("UNUSED_PARAMETER") nodeH: Float = cellSize,
+  footprintOf: (Workflow, WorkflowNode) -> CellRect,
 ): Set<Long> {
   val cells = HashSet<Long>()
   for (wf in flows) {
@@ -40,34 +41,31 @@ fun rasterizeWorkflowPaths(
     for (e in wf.edges) {
       val a = byId[e.fromNode] ?: continue
       val b = byId[e.toNode] ?: continue
-      val acx = kotlin.math.floor((wf.originX + a.x) / cellSize).toInt()
-      val acy = kotlin.math.floor((wf.originY + a.y) / cellSize).toInt()
-      val bcx = kotlin.math.floor((wf.originX + b.x) / cellSize).toInt()
-      val bcy = kotlin.math.floor((wf.originY + b.y) / cellSize).toInt()
-      rasterizeManhattan(acx, acy, bcx, bcy, cells)
+      val (ax, ay) = exitCellOf(footprintOf(wf, a))
+      val (bx, by) = entryCellOf(footprintOf(wf, b))
+      rasterizeManhattan(ax, ay, bx, by, cells)
     }
   }
   return cells
 }
 
 /**
- * Preview edge (drag) at cell granularity, same Manhattan rule.
+ * Preview edge (drag) at cell granularity, same Manhattan rule. Uses the source node's
+ * bottom-right exit cell; the pointer position is treated as a loose 1-cell target.
  */
 fun rasterizePreviewPath(
   fromFlow: Workflow,
   fromNodeId: String,
   pointerWorld: Offset,
   cellSize: Float,
-  @Suppress("UNUSED_PARAMETER") nodeW: Float = cellSize,
-  @Suppress("UNUSED_PARAMETER") nodeH: Float = cellSize,
+  footprintOf: (Workflow, WorkflowNode) -> CellRect,
 ): Set<Long> {
   val n = fromFlow.nodes.firstOrNull { it.id == fromNodeId } ?: return emptySet()
-  val acx = kotlin.math.floor((fromFlow.originX + n.x) / cellSize).toInt()
-  val acy = kotlin.math.floor((fromFlow.originY + n.y) / cellSize).toInt()
+  val (ax, ay) = exitCellOf(footprintOf(fromFlow, n))
   val bcx = kotlin.math.floor(pointerWorld.x / cellSize).toInt()
   val bcy = kotlin.math.floor(pointerWorld.y / cellSize).toInt()
   val cells = HashSet<Long>()
-  rasterizeManhattan(acx, acy, bcx, bcy, cells)
+  rasterizeManhattan(ax, ay, bcx, bcy, cells)
   return cells
 }
 
@@ -99,7 +97,7 @@ private fun rasterizeManhattan(
 /**
  * Ordered list of cells from `(ax, ay)` to `(bx, by)` following the same L-shape the
  * rasterizer uses (horizontal first, then vertical). Both endpoints are INCLUDED so the
- * [CatActor] can animate a waypoint walk from task → task along the exact dirt trail.
+ * [CatActor] can animate a waypoint walk from task â†’ task along the exact dirt trail.
  */
 fun manhattanPathCells(ax: Int, ay: Int, bx: Int, by: Int): List<Pair<Int, Int>> {
   if (ax == bx && ay == by) return listOf(ax to ay)
@@ -111,4 +109,5 @@ fun manhattanPathCells(ax: Int, ay: Int, bx: Int, by: Int): List<Pair<Int, Int>>
   else for (y in (ay - 1) downTo by) out.add(bx to y)
   return out
 }
+
 

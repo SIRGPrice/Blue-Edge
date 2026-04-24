@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.common
-
+
+import com.google.ai.edge.gallery.R
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.RepeatMode
@@ -43,7 +44,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.ui.theme.customColors
 
 private const val GRID_SPACING_FACTOR = 0.1f
@@ -137,3 +137,4 @@ fun RotationalLoader(size: Dp) {
     }
   }
 }
+

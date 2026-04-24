@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.benchmark
-
+
+import com.google.ai.edge.gallery.R
 import android.content.ClipData
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -95,7 +96,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.proto.LlmBenchmarkResult
 import com.google.ai.edge.gallery.proto.ValueSeries
 import com.google.ai.edge.gallery.ui.common.Accordions
@@ -203,7 +203,7 @@ fun BenchmarkResultsViewer(
           if (filteredResults.size > 1) {
             IconButton(onClick = { showBenchmarkComparisonHelpBottomSheet = true }) {
               Icon(
-                Icons.AutoMirrored.Outlined.HelpOutline,
+                R.drawable.ic_h_el_po_ut_li_ne_24px,
                 contentDescription = stringResource(R.string.cd_help),
               )
             }
@@ -215,7 +215,7 @@ fun BenchmarkResultsViewer(
         actions = {
           if (!uiState.running) {
             IconButton(onClick = onClose) {
-              Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.close))
+              Icon(R.drawable.ic_c_lo_se_24px, contentDescription = stringResource(R.string.close))
             }
           }
         },
@@ -313,7 +313,7 @@ fun BenchmarkResultsViewer(
                           contentPadding = SMALL_BUTTON_CONTENT_PADDING,
                         ) {
                           Icon(
-                            Icons.Rounded.UnfoldMoreDouble,
+                            R.drawable.ic_u_nf_ol_dm_or_ed_ou_bl_e_24px,
                             contentDescription = null,
                             modifier = Modifier.padding(end = 4.dp).size(16.dp),
                           )
@@ -324,7 +324,7 @@ fun BenchmarkResultsViewer(
                           contentPadding = SMALL_BUTTON_CONTENT_PADDING,
                         ) {
                           Icon(
-                            Icons.Rounded.UnfoldLessDouble,
+                            R.drawable.ic_u_nf_ol_dl_es_sd_ou_bl_e_24px,
                             contentDescription = null,
                             modifier = Modifier.padding(end = 4.dp).size(16.dp),
                           )
@@ -344,7 +344,7 @@ fun BenchmarkResultsViewer(
                     result.benchmarkResult.llmResult?.let { llmResult ->
                       val modelName = llmResult.baiscInfo.modelName
                       Accordions(
-                        title = "$modelName · ${llmResult.baiscInfo.accelerator}",
+                        title = "$modelName Â· ${llmResult.baiscInfo.accelerator}",
                         subtitle =
                           SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                             .format(Date(llmResult.baiscInfo.startMs)),
@@ -369,7 +369,7 @@ fun BenchmarkResultsViewer(
                                 if (result.id == uiState.baselineResult?.id) {
                                   {
                                     Icon(
-                                      Icons.Rounded.Check,
+                                      R.drawable.ic_c_he_ck_24px,
                                       contentDescription = null,
                                       modifier = Modifier.size(16.dp).offset(x = 2.dp),
                                     )
@@ -465,7 +465,7 @@ fun BenchmarkResultsViewer(
                                       style = MaterialTheme.typography.labelMedium,
                                     )
                                     Icon(
-                                      Icons.Rounded.ArrowDropDown,
+                                      R.drawable.ic_a_rr_ow_dr_op_do_wn_24px,
                                       modifier = Modifier.size(20.dp),
                                       contentDescription = null,
                                     )
@@ -613,7 +613,7 @@ fun BenchmarkResultsViewer(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                               ) {
                                 Icon(
-                                  Icons.Rounded.DeleteOutline,
+                                  R.drawable.ic_d_el_et_eo_ut_li_ne_24px,
                                   contentDescription = null,
                                   modifier = Modifier.size(20.dp),
                                 )
@@ -651,7 +651,7 @@ fun BenchmarkResultsViewer(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                               ) {
                                 Icon(
-                                  Icons.Rounded.ContentCopy,
+                                  R.drawable.ic_c_on_te_nt_co_py_24px,
                                   contentDescription = null,
                                   modifier = Modifier.size(20.dp),
                                   tint = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -736,7 +736,7 @@ fun BenchmarkResultsViewer(
         verticalArrangement = Arrangement.spacedBy(16.dp),
       ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = null)
+          Icon(R.drawable.ic_h_el_po_ut_li_ne_24px, contentDescription = null)
           Text(
             stringResource(R.string.benchmark_comparison_help_title),
             style = MaterialTheme.typography.titleMedium,
@@ -998,3 +998,5 @@ private fun getAggregationValue(valueSeries: ValueSeries, aggregation: Aggregati
     Aggregation.MAX -> valueSeries.max
   }
 }
+
+

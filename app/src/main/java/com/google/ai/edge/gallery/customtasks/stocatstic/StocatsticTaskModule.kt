@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -18,10 +18,13 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.Se
 import com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.TtsCapability
 import com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.VibrateCapability
 import com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ViewUriCapability
+import com.google.ai.edge.gallery.customtasks.stocatstic.data.DangerousActionLog
 import com.google.ai.edge.gallery.customtasks.stocatstic.data.WorkflowRepository
 import com.google.ai.edge.gallery.customtasks.stocatstic.domain.Capability
 import com.google.ai.edge.gallery.customtasks.stocatstic.engine.ActiveModelLlmRunner
 import com.google.ai.edge.gallery.customtasks.stocatstic.engine.LlmRunner
+import com.google.ai.edge.gallery.customtasks.stocatstic.engine.ReactiveEventBus
+import com.google.ai.edge.gallery.customtasks.stocatstic.engine.ReactiveEventBusInitializer
 import com.google.ai.edge.gallery.customtasks.stocatstic.engine.TriggerScheduler
 import com.google.ai.edge.gallery.customtasks.stocatstic.engine.WorkflowEngine
 import com.google.ai.edge.gallery.customtasks.stocatstic.engine.WorkflowRunner
@@ -53,11 +56,23 @@ abstract class StocatsticTaskModule {
   @Binds @IntoSet abstract fun setVar(c: SetVariableCapability): Capability
   @Binds @IntoSet abstract fun llm(c: LlmDecisionCapability): Capability
 
+  // ----- Reactive / communications (NEW) --------------------------------------------------------
+  @Binds @IntoSet abstract fun waitSms(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.WaitSmsCapability): Capability
+  @Binds @IntoSet abstract fun waitWhats(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.WaitWhatsAppCapability): Capability
+  @Binds @IntoSet abstract fun waitTele(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.WaitTelegramCapability): Capability
+  @Binds @IntoSet abstract fun waitDisc(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.WaitDiscordCapability): Capability
+  @Binds @IntoSet abstract fun waitEmail(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.WaitEmailCapability): Capability
+  @Binds @IntoSet abstract fun replySms(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ReplySmsCapability): Capability
+  @Binds @IntoSet abstract fun replyWhats(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ReplyWhatsAppCapability): Capability
+  @Binds @IntoSet abstract fun replyTele(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ReplyTelegramCapability): Capability
+  @Binds @IntoSet abstract fun replyDisc(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ReplyDiscordCapability): Capability
+  @Binds @IntoSet abstract fun replyEmail(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ReplyEmailCapability): Capability
+  @Binds @IntoSet abstract fun waitMissed(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.WaitMissedCallCapability): Capability
+
   // ----- Extra capabilities (gallery expansion) -------------------------------------------------
   @Binds @IntoSet abstract fun clipboardCopy(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ClipboardCopyCapability): Capability
   @Binds @IntoSet abstract fun clipboardRead(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ClipboardReadCapability): Capability
   @Binds @IntoSet abstract fun toast(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.ToastCapability): Capability
-  @Binds @IntoSet abstract fun setVolume(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.SetVolumeCapability): Capability
   @Binds @IntoSet abstract fun ringerMode(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.RingerModeCapability): Capability
   @Binds @IntoSet abstract fun battery(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.BatteryReadCapability): Capability
   @Binds @IntoSet abstract fun bluetoothSettings(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.OpenBluetoothSettingsCapability): Capability
@@ -65,9 +80,7 @@ abstract class StocatsticTaskModule {
   @Binds @IntoSet abstract fun airplaneSettings(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.OpenAirplaneModeSettingsCapability): Capability
   @Binds @IntoSet abstract fun soundSettings(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.OpenSoundSettingsCapability): Capability
   @Binds @IntoSet abstract fun displaySettings(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.OpenDisplaySettingsCapability): Capability
-  @Binds @IntoSet abstract fun dataSettings(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.OpenDataUsageSettingsCapability): Capability
   @Binds @IntoSet abstract fun camera(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.LaunchCameraCapability): Capability
-  @Binds @IntoSet abstract fun musicSearch(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.LaunchMusicSearchCapability): Capability
   @Binds @IntoSet abstract fun dial(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.DialCapability): Capability
   @Binds @IntoSet abstract fun sms(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.SmsComposeCapability): Capability
   @Binds @IntoSet abstract fun email(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.EmailComposeCapability): Capability
@@ -78,8 +91,6 @@ abstract class StocatsticTaskModule {
   @Binds @IntoSet abstract fun alarm(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.SetAlarmCapability): Capability
   @Binds @IntoSet abstract fun timer(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.SetTimerCapability): Capability
   @Binds @IntoSet abstract fun textFormat(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.TextFormatCapability): Capability
-  @Binds @IntoSet abstract fun textTransform(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.TextTransformCapability): Capability
-  @Binds @IntoSet abstract fun regexReplace(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.RegexReplaceCapability): Capability
   @Binds @IntoSet abstract fun math(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.MathCapability): Capability
   @Binds @IntoSet abstract fun compare(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.CompareCapability): Capability
   @Binds @IntoSet abstract fun randomNumber(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.RandomNumberCapability): Capability
@@ -89,7 +100,6 @@ abstract class StocatsticTaskModule {
   @Binds @IntoSet abstract fun weekday(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.WeekdayCapability): Capability
   @Binds @IntoSet abstract fun httpGet(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.HttpGetCapability): Capability
   @Binds @IntoSet abstract fun ping(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.PingCapability): Capability
-  @Binds @IntoSet abstract fun logCap(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.LogCapability): Capability
   @Binds @IntoSet abstract fun counter(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.CounterIncrementCapability): Capability
   @Binds @IntoSet abstract fun passthrough(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.NoopCapability): Capability
   @Binds @IntoSet abstract fun failCap(c: com.google.ai.edge.gallery.customtasks.stocatstic.capabilities.builtin.FailCapability): Capability
@@ -108,6 +118,8 @@ object StocatsticBootstrapModule {
     engine: WorkflowEngine,
     repo: WorkflowRepository,
     scheduler: TriggerScheduler,
+    @Suppress("UNUSED_PARAMETER") busInit: ReactiveEventBusInitializer,
+    @Suppress("UNUSED_PARAMETER") dangerLog: DangerousActionLog,
   ): StocatsticBootstrap {
     WorkflowRunner.engine = engine
     WorkflowRunner.repository = repo
@@ -118,4 +130,5 @@ object StocatsticBootstrapModule {
 }
 
 object StocatsticBootstrap
+
 

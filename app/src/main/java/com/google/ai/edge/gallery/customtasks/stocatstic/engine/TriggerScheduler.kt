@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -18,9 +18,16 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.domain.Workflow
 import com.google.ai.edge.gallery.customtasks.stocatstic.domain.WorkflowTrigger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
 
 /**
  * Registers / unregisters triggers in the Android platform. Keeps runtime side-effects outside the
@@ -30,7 +37,12 @@ import javax.inject.Singleton
 class TriggerScheduler @Inject constructor(
   @ApplicationContext private val ctx: Context,
   private val repo: WorkflowRepository,
+  private val bus: ReactiveEventBus,
 ) {
+  private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+  /** Active reactive-collector jobs keyed by workflow id (one wrapper job per workflow). */
+  private val reactiveJobs = ConcurrentHashMap<String, Job>()
+
   fun syncAll() {
     repo.workflows.value.forEach { wf ->
       if (wf.enabled) schedule(wf) else cancel(wf)
@@ -40,19 +52,121 @@ class TriggerScheduler @Inject constructor(
   fun schedule(workflow: Workflow) {
     cancel(workflow)
     if (!workflow.enabled) return
+    // Explicit triggers declared on the workflow.
     workflow.triggers.forEach { t ->
       when (t) {
         is WorkflowTrigger.Periodic -> schedulePeriodic(workflow.id, t)
         is WorkflowTrigger.Alarm -> scheduleAlarm(workflow.id, t)
         is WorkflowTrigger.BootCompleted, is WorkflowTrigger.Manual -> Unit
+        is WorkflowTrigger.SmsReceived,
+        is WorkflowTrigger.NotificationMatched,
+        is WorkflowTrigger.CallMissed -> scheduleReactive(workflow, t)
       }
+    }
+    // Ergonomic auto-wiring: if the workflow has no explicit reactive trigger but its root
+    // node is a reactive "Esperar â€¦" capability, derive the trigger from the node's config.
+    // This lets the user simply drop a "Esperar SMS" node at the start of the flow and the
+    // workflow will spring to life whenever a matching event arrives.
+    if (workflow.triggers.none { it.isReactive() }) {
+      derivedReactiveTrigger(workflow)?.let { scheduleReactive(workflow, it) }
     }
   }
 
   fun cancel(workflow: Workflow) {
     WorkManager.getInstance(ctx).cancelUniqueWork(workTag(workflow.id))
     cancelAlarm(workflow.id)
+    reactiveJobs.remove(workflow.id)?.cancel()
   }
+
+  // ----- Reactive triggers --------------------------------------------------------------------
+
+  private fun scheduleReactive(workflow: Workflow, t: WorkflowTrigger) {
+    val wfId = workflow.id
+    val job = scope.launch {
+      bus.events
+        .filter { ev -> matches(t, ev) }
+        .collect {
+          val engine = WorkflowRunner.engine ?: return@collect
+          val repo = WorkflowRunner.repository ?: return@collect
+          val wf = repo.get(wfId) ?: return@collect
+          engine.run(wf)
+        }
+    }
+    // Merge multiple reactive triggers into a single supervisor wrapper so cancel() is trivial.
+    reactiveJobs.compute(wfId) { _, existing ->
+      existing?.cancel()
+      job
+    }
+  }
+
+  private fun matches(t: WorkflowTrigger, ev: ReactiveEvent): Boolean = when {
+    t is WorkflowTrigger.SmsReceived && ev is ReactiveEvent.Sms ->
+      matchesSender(ev.sender, t.mode, t.senders)
+    t is WorkflowTrigger.NotificationMatched && ev is ReactiveEvent.Notification ->
+      (ev.packageName in t.packageNames) && matchesSender(ev.sender, t.mode, t.senders)
+    t is WorkflowTrigger.CallMissed && ev is ReactiveEvent.CallMissed ->
+      matchesSender(ev.sender, t.mode, t.numbers) && (!t.onlyWhenScreenOff || ev.wasScreenOff)
+    else -> false
+  }
+
+  private fun WorkflowTrigger.isReactive(): Boolean =
+    this is WorkflowTrigger.SmsReceived ||
+      this is WorkflowTrigger.NotificationMatched ||
+      this is WorkflowTrigger.CallMissed
+
+  /**
+   * If the workflow's first node is one of the `trigger.*` "Esperar â€¦" capabilities, build the
+   * matching reactive [WorkflowTrigger] from its `mode + senders` config. This way the user
+   * doesn't have to separately declare a trigger: placing the capability on the graph is enough.
+   */
+  private fun derivedReactiveTrigger(workflow: Workflow): WorkflowTrigger? {
+    val root = workflow.roots().firstOrNull() ?: return null
+    val (mode, allowed) = readModeAndSenders(root.config)
+    return when (root.capabilityId) {
+      "trigger.sms" -> WorkflowTrigger.SmsReceived(mode, allowed)
+      "trigger.whatsapp" -> WorkflowTrigger.NotificationMatched(
+        packageNames = listOf("com.whatsapp", "com.whatsapp.w4b"),
+        mode = mode, senders = allowed,
+      )
+      "trigger.telegram" -> WorkflowTrigger.NotificationMatched(
+        packageNames = listOf("org.telegram.messenger", "org.telegram.messenger.web"),
+        mode = mode, senders = allowed,
+      )
+      "trigger.discord" -> WorkflowTrigger.NotificationMatched(
+        packageNames = listOf("com.discord"),
+        mode = mode, senders = allowed,
+      )
+      "trigger.email" -> {
+        val providers = (root.config["providers"] as? kotlinx.serialization.json.JsonArray)
+          ?.mapNotNull { (it as? kotlinx.serialization.json.JsonPrimitive)?.content }
+          ?: listOf("com.google.android.gm", "com.microsoft.office.outlook",
+            "com.yahoo.mobile.client.android.mail", "net.thunderbird.android")
+        WorkflowTrigger.NotificationMatched(providers, mode, allowed)
+      }
+      "trigger.missed_call" -> {
+        val onlyOff = (root.config["onlyWhenScreenOff"]
+          as? kotlinx.serialization.json.JsonPrimitive)?.content?.toBooleanStrictOrNull() ?: true
+        WorkflowTrigger.CallMissed(mode, allowed, onlyOff)
+      }
+      else -> null
+    }
+  }
+
+  private fun readModeAndSenders(cfg: kotlinx.serialization.json.JsonObject):
+      Pair<com.google.ai.edge.gallery.customtasks.stocatstic.domain.MatchMode, List<String>> {
+    val mode = runCatching {
+      com.google.ai.edge.gallery.customtasks.stocatstic.domain.MatchMode.valueOf(
+        (cfg["mode"] as? kotlinx.serialization.json.JsonPrimitive)?.content.orEmpty(),
+      )
+    }.getOrDefault(com.google.ai.edge.gallery.customtasks.stocatstic.domain.MatchMode.ANY)
+    val list = (cfg["senders"] as? kotlinx.serialization.json.JsonArray).orEmpty().mapNotNull {
+      (it as? kotlinx.serialization.json.JsonPrimitive)?.content?.trim()?.takeIf(String::isNotEmpty)
+    }
+    return mode to list
+  }
+
+  private fun kotlinx.serialization.json.JsonArray?.orEmpty() =
+    this ?: kotlinx.serialization.json.JsonArray(emptyList())
 
   private fun schedulePeriodic(id: String, t: WorkflowTrigger.Periodic) {
     val interval = t.intervalMinutes.coerceAtLeast(15)
@@ -91,4 +205,5 @@ class TriggerScheduler @Inject constructor(
 
   private fun workTag(id: String) = "stocatstic-$id"
 }
+
 

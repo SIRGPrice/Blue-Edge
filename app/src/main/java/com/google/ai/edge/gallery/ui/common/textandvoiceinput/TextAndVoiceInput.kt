@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 package com.google.ai.edge.gallery.ui.common.textandvoiceinput
-
+
+import com.google.ai.edge.gallery.R
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -53,7 +54,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.ui.common.getTaskIconColor
 import com.google.ai.edge.gallery.ui.theme.bodyLargeNarrow
@@ -104,7 +104,7 @@ fun TextAndVoiceInput(
       contentAlignment = Alignment.Center,
     ) {
       Icon(
-        if (textInputMode) Icons.Outlined.Mic else Icons.Outlined.KeyboardAlt,
+        if (textInputMode) R.drawable.ic_m_ic_24px else R.drawable.ic_k_ey_bo_ar_da_lt_24px,
         contentDescription =
           stringResource(
             if (textInputMode) R.string.cd_switch_to_voice else R.string.cd_switch_to_keyboard
@@ -174,7 +174,7 @@ fun TextAndVoiceInput(
                   contentAlignment = Alignment.Center,
                 ) {
                   Icon(
-                    Icons.AutoMirrored.Rounded.Send,
+                    R.drawable.ic_s_en_d_24px,
                     contentDescription = stringResource(R.string.cd_send_prompt_icon),
                     modifier = Modifier.offset(x = 2.dp),
                     tint = Color.White,
@@ -199,3 +199,5 @@ fun TextAndVoiceInput(
     }
   }
 }
+
+

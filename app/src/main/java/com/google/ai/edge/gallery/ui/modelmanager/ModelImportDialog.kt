@@ -74,9 +74,11 @@ import com.google.ai.edge.gallery.data.DEFAULT_TOPP
 import com.google.ai.edge.gallery.data.IMPORTS_DIR
 import com.google.ai.edge.gallery.data.LabelConfig
 import com.google.ai.edge.gallery.data.NumberSliderConfig
+import com.google.ai.edge.gallery.data.SUPPORTED_GEMMA4_MODEL_FAMILY
 import com.google.ai.edge.gallery.data.SegmentedButtonConfig
 import com.google.ai.edge.gallery.data.ValueType
 import com.google.ai.edge.gallery.data.convertValueToTargetType
+import com.google.ai.edge.gallery.data.isSupportedGemma4EdgeModelName
 import com.google.ai.edge.gallery.proto.ImportedModel
 import com.google.ai.edge.gallery.proto.LlmConfig
 import com.google.ai.edge.gallery.ui.common.ConfigEditorsPanel
@@ -155,6 +157,7 @@ fun ModelImportDialog(
   val info = remember { getFileSizeAndDisplayNameFromUri(context = context, uri = uri) }
   val fileSize by remember { mutableLongStateOf(info.first) }
   val fileName by remember { mutableStateOf(ensureValidFileName(info.second)) }
+  val isSupportedModelFile = remember(fileName) { isSupportedGemma4EdgeModelName(fileName) }
 
   val initialValues: Map<String, Any> = remember {
     mutableMapOf<String, Any>().apply {
@@ -198,6 +201,14 @@ fun ModelImportDialog(
           modifier = Modifier.padding(bottom = 8.dp),
         )
 
+        if (!isSupportedModelFile) {
+          Text(
+            "Blue Edge only supports $SUPPORTED_GEMMA4_MODEL_FAMILY model files.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+          )
+        }
+
         Column(
           modifier = Modifier.verticalScroll(rememberScrollState()).weight(1f, fill = false),
           verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -216,6 +227,7 @@ fun ModelImportDialog(
 
           // Import button
           Button(
+            enabled = isSupportedModelFile,
             onClick = {
               val supportedAccelerators =
                 (convertValueToTargetType(

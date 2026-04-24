@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -9,14 +9,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.Dp
@@ -27,29 +21,27 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.ui.theme.PixelPalette
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 
 /**
- * StoCATstic root screen: a single infinite pixel scene. No tabs, no nested screens — the user
+ * StoCATstic root screen: a single infinite pixel scene. No tabs, no nested screens â€” the user
  * pans, zooms and edits everything in place on the same shared world.
+ *
+ * The global top app bar is hidden while this screen is mounted so all navigation controls
+ * (back, gallery, history, â€¦) are drawn as floating icons directly on top of the scene.
  */
 @Composable
 fun StocatsticRootScreen(
   @Suppress("UNUSED_PARAMETER") modelManagerViewModel: ModelManagerViewModel,
   bottomPadding: Dp,
   setAppBarControlsDisabled: (Boolean) -> Unit,
-  @Suppress("UNUSED_PARAMETER") setTopBarVisible: (Boolean) -> Unit,
+  setTopBarVisible: (Boolean) -> Unit,
   setCustomLeadingAction: (CustomTaskTopBarAction?) -> Unit,
+  onNavigateUp: () -> Unit = {},
   vm: StocatsticViewModel = hiltViewModel(),
 ) {
   setAppBarControlsDisabled(false)
-  var galleryRequestCount by remember { mutableIntStateOf(0) }
   DisposableEffect(Unit) {
-    setCustomLeadingAction(
-      CustomTaskTopBarAction(
-        icon = Icons.Outlined.Collections,
-        contentDescription = "Abrir galería de assets",
-        onClick = { galleryRequestCount++ },
-      )
-    )
-    onDispose { setCustomLeadingAction(null) }
+    setTopBarVisible(false)
+    setCustomLeadingAction(null)
+    onDispose { setTopBarVisible(true) }
   }
   val gradient = Brush.verticalGradient(listOf(PixelPalette.nightSky, PixelPalette.deepSky))
   Box(
@@ -59,7 +51,7 @@ fun StocatsticRootScreen(
       .imePadding()
       .padding(bottom = bottomPadding),
   ) {
-    InfiniteSceneScreen(vm = vm, externalGalleryRequestCount = galleryRequestCount)
+    InfiniteSceneScreen(vm = vm, onNavigateUp = onNavigateUp)
   }
 }
 

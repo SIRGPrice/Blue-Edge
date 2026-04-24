@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -11,19 +11,21 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.ui.assets.AssetType
  * One cat per active subflow. The cat walks through an ORDERED list of waypoints so it
  * visibly follows the rasterized dirt trail instead of teleporting in a straight line.
  *
- * Facing convention (matches Little Dreamyland row order):
- *   • 0 = front (looking at the user, i.e. moving DOWN)
- *   • 1 = left
- *   • 2 = right
- *   • 3 = back (moving UP)
+ * Sprite-sheet row convention used by the Little Dreamyland art pack shipped with the app:
+ *   â€¢ 0 = back  (character moving UP, facing away from the user)
+ *   â€¢ 1 = right (character moving RIGHT)
+ *   â€¢ 2 = left  (character moving LEFT)
+ *   â€¢ 3 = front (character facing the user â€” used while waiting OR while moving DOWN)
  *
- * Facing rules enforced by [tick]/[finishWork]/[jumpTo]:
- *   • IDLE (no pending waypoints, no work) → always front (dir = 0).
- *   • WALK vertical segment → back when going up, front when going down.
- *     Vertical motion DOMINATES over horizontal so "any action" shows front/back whenever
- *     there is a vertical component.
- *   • WALK pure-horizontal segment → left/right.
- *   • WORK state inherits whatever dir the cat had on arrival; [AssetType.NORMAL] causes
+ * `dir` stored here is the actual row index consumed by the renderer. Facing rules enforced
+ * by [tick]/[finishWork]/[jumpTo]:
+ *   â€¢ IDLE (no pending waypoints, no work) â†’ always front (dir = 3) so the character looks
+ *     at the user while waiting next to the root task.
+ *   â€¢ WALK vertical segment â†’ back when going up, front when going down. Vertical motion
+ *     DOMINATES over horizontal so "any action" shows front/back whenever there is a
+ *     vertical component.
+ *   â€¢ WALK pure-horizontal segment â†’ left/right.
+ *   â€¢ WORK state inherits whatever dir the cat had on arrival; [AssetType.NORMAL] causes
  *     the cat to orbit around the arrival position, updating dir every tick based on the
  *     tangent vector (again with vertical dominance).
  */
@@ -31,8 +33,8 @@ class CatActor(var position: Offset = Offset.Zero) {
   enum class State { IDLE, WALK, WORK }
 
   var state: State = State.IDLE
-  /** 0 down/front, 1 left, 2 right, 3 up/back. */
-  var dir: Int = 0
+  /** Sprite-sheet row index: 0 back/up, 1 right, 2 left, 3 front/down. */
+  var dir: Int = 3
   /** Capability id currently executing (used by the scene to decide overlay effects). */
   var workingCapabilityId: String? = null
   /** Behavioural tag of the task the cat is working on (drives the WORK animation choice). */
@@ -61,10 +63,10 @@ class CatActor(var position: Offset = Offset.Zero) {
             }
           } else {
             state = State.IDLE
-            dir = 0 // rule: idle always faces the user.
+            dir = 3 // rule: idle always faces the user.
           }
         } else if (state == State.IDLE) {
-          dir = 0 // ensure we stay facing the user even if something mutated dir.
+          dir = 3 // ensure we stay facing the user even if something mutated dir.
         } else if (state == State.WORK) {
           tickWork(dtSeconds)
         }
@@ -80,11 +82,11 @@ class CatActor(var position: Offset = Offset.Zero) {
     }
     val step = (speedWorldUnitsPerSec * dtSeconds).coerceAtMost(dist)
     position = Offset(position.x + dx / dist * step, position.y + dy / dist * step)
-    // Facing rule: vertical component always wins → back/front whenever |dy| > 0.
+    // Row mapping: 0 up/back, 1 right, 2 left, 3 down/front. Vertical component wins.
     dir = when {
-      kotlin.math.abs(dy) > 0.01f -> if (dy > 0) 0 else 3
-      dx > 0 -> 2
-      dx < 0 -> 1
+      kotlin.math.abs(dy) > 0.01f -> if (dy > 0) 3 else 0
+      dx > 0 -> 1
+      dx < 0 -> 2
       else -> dir
     }
     state = State.WALK
@@ -103,9 +105,9 @@ class CatActor(var position: Offset = Offset.Zero) {
     val tdx = position.x - prev.x
     val tdy = position.y - prev.y
     dir = when {
-      kotlin.math.abs(tdy) > 0.01f -> if (tdy > 0) 0 else 3
-      tdx > 0 -> 2
-      tdx < 0 -> 1
+      kotlin.math.abs(tdy) > 0.01f -> if (tdy > 0) 3 else 0
+      tdx > 0 -> 1
+      tdx < 0 -> 2
       else -> dir
     }
   }
@@ -120,7 +122,7 @@ class CatActor(var position: Offset = Offset.Zero) {
     points.forEach { waypoints.addLast(it) }
     this.workingCapabilityId = workingCapabilityId
     this.workAssetType = workAssetType
-    // Moving to a new target ⇒ clear any orbit anchor from the previous WORK.
+    // Moving to a new target â‡’ clear any orbit anchor from the previous WORK.
     this.orbitCenter = null
     this.orbitAngle = 0f
     if (waypoints.isNotEmpty()) state = State.WALK
@@ -139,7 +141,7 @@ class CatActor(var position: Offset = Offset.Zero) {
     waypoints.clear()
     orbitCenter = null
     state = if (workingCapabilityId != null) State.WORK else State.IDLE
-    if (state == State.IDLE) dir = 0
+    if (state == State.IDLE) dir = 3
   }
 
   fun finishWork() {
@@ -148,7 +150,7 @@ class CatActor(var position: Offset = Offset.Zero) {
     orbitCenter = null
     if (waypoints.isEmpty()) {
       state = State.IDLE
-      dir = 0
+      dir = 3
     }
   }
 
@@ -156,3 +158,4 @@ class CatActor(var position: Offset = Offset.Zero) {
   val target: Offset
     get() = waypoints.lastOrNull() ?: position
 }
+

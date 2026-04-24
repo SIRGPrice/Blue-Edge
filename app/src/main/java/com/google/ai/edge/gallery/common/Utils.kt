@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -378,3 +378,4 @@ fun isAICoreSupported(allowedDeviceModels: Set<String>?): Boolean {
   val currentModel = Build.MODEL?.lowercase() ?: return false
   return allowedDeviceModels.contains(currentModel)
 }
+

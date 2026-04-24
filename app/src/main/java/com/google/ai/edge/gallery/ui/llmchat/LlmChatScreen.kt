@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.llmchat
-
+
+import com.google.ai.edge.gallery.R
 import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.graphics.Bitmap
@@ -33,7 +34,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.BuiltInTaskId
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.RuntimeType
@@ -48,6 +48,7 @@ import com.google.ai.edge.gallery.ui.common.chat.SendMessageTrigger
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import com.google.ai.edge.gallery.ui.theme.emptyStateContent
 import com.google.ai.edge.gallery.ui.theme.emptyStateTitle
+import kotlinx.coroutines.launch
 
 private const val TAG = "AGLlmChatScreen"
 
@@ -203,6 +204,11 @@ fun ChatViewWrapper(
   val task = modelManagerViewModel.getTaskById(id = taskId)!!
   val allowThinking = task.allowThinking()
 
+  // Coroutine scope used to run the RAG augmentation (SQLite/IO) right before firing
+  // `generateResponse`. The RAG coordinator lives on the shared ModelManagerViewModel.
+  val ragScope = androidx.compose.runtime.rememberCoroutineScope()
+  val ragCoordinator = modelManagerViewModel.chatAttachments
+
   ChatView(
     task = task,
     viewModel = viewModel,
@@ -235,24 +241,38 @@ fun ChatViewWrapper(
         if (text.isNotEmpty()) {
           modelManagerViewModel.addTextInputHistory(text)
         }
-        viewModel.generateResponse(
-          model = model,
-          input = text,
-          images = images,
-          audioMessages = audioMessages,
-          onFirstToken = onFirstToken,
-          onDone = { onGenerateResponseDone(model) },
-          onError = { errorMessage ->
-            viewModel.handleError(
-              context = context,
-              task = task,
-              model = model,
-              errorMessage = errorMessage,
-              modelManagerViewModel = modelManagerViewModel,
-            )
-          },
-          allowThinking = allowThinking,
-        )
+        // Consume any staged document attachments / memory flag, augmenting the prompt
+        // with retrieved RAG context BEFORE handing it off to the model. If nothing was
+        // staged, the original text flows through unchanged.
+        ragScope.launch {
+          val finalText = try {
+            ragCoordinator.augmentPromptForSend(
+              conversationKey = model.name,
+              userPrompt = text,
+            ).augmentedPrompt
+          } catch (t: Throwable) {
+            android.util.Log.e(TAG, "RAG augmentation failed; falling back to raw prompt", t)
+            text
+          }
+          viewModel.generateResponse(
+            model = model,
+            input = finalText,
+            images = images,
+            audioMessages = audioMessages,
+            onFirstToken = onFirstToken,
+            onDone = { onGenerateResponseDone(model) },
+            onError = { errorMessage ->
+              viewModel.handleError(
+                context = context,
+                task = task,
+                model = model,
+                errorMessage = errorMessage,
+                modelManagerViewModel = modelManagerViewModel,
+              )
+            },
+            allowThinking = allowThinking,
+          )
+        }
 
       }
     },
@@ -306,3 +326,4 @@ fun ChatViewWrapper(
     showAppSettingsButton = showAppSettingsButton,
   )
 }
+

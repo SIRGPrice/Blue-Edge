@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +22,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
 
-// MobileActions module removed — not used in Blue Edge.
+// MobileActions module removed â€” not used in Blue Edge.
 @Module
 @InstallIn(SingletonComponent::class)
 internal object MobileActionsModule {
 }
+

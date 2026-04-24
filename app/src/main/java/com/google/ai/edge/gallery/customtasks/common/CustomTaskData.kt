@@ -41,6 +41,11 @@ data class CustomTaskData(
   val setTopBarVisible: (Boolean) -> Unit = {},
   val setCustomNavigateUpCallback: ((() -> Unit)?) -> Unit = {},
   val setCustomLeadingAction: (CustomTaskTopBarAction?) -> Unit = {},
+  /**
+   * Lets the custom screen trigger the hosting NavGraph's "navigate up" flow when it renders
+   * its own back button (e.g. when [setTopBarVisible] is used to hide the default top bar).
+   */
+  val performNavigateUp: () -> Unit = {},
 )
 
 data class CustomTaskTopBarAction(

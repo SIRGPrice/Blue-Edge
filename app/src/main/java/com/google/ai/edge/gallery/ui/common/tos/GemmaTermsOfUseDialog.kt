@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.tos
-
+
+import com.google.ai.edge.gallery.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,7 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.ui.common.buildTrackableUrlAnnotatedString
 
 /** A composable for Gemma Terms of Use dialog, shown once before a Gemma model is downloaded. */
@@ -112,3 +112,4 @@ fun GemmaTermsOfUseDialog(
     }
   }
 }
+

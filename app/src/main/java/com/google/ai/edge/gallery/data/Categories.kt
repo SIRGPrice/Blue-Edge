@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +15,9 @@
  */
 
 package com.google.ai.edge.gallery.data
-
-import androidx.annotation.StringRes
+
 import com.google.ai.edge.gallery.R
-
+import androidx.annotation.StringRes
 /**
  * Stores basic info about a Category
  *
@@ -43,3 +42,4 @@ object Category {
   val EXPERIMENTAL =
     CategoryInfo(id = "experimental", labelStringRes = R.string.category_experimental)
 }
+

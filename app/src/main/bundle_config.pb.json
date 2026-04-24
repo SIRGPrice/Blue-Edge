@@ -1,5 +1,3 @@
-// Bundle config for the Google AI Edge Gallery app.
-// See: https://developer.android.com/studio/build/building-cmdline#bundleconfig
 {
   "optimizations": {
     "splitsConfig": {

@@ -30,6 +30,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -71,11 +72,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FlipCameraAndroid
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.Photo
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.Stop
@@ -135,6 +139,10 @@ import com.google.ai.edge.gallery.data.SAMPLE_RATE
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.ui.common.getTaskIconColor
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
+import com.google.ai.edge.gallery.ui.common.chat.rag.AttachmentScope
+import com.google.ai.edge.gallery.ui.common.chat.rag.DocumentAttachment
+import com.google.ai.edge.gallery.ui.common.chat.rag.DocumentTextExtractor
+import com.google.ai.edge.gallery.ui.common.chat.rag.PendingRagStaging
 import com.google.ai.edge.gallery.ui.theme.bodyLargeNarrow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -191,6 +199,15 @@ fun MessageInputText(
   val audioRecorderSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var pickedImages by remember { mutableStateOf<List<Bitmap>>(listOf()) }
   var pickedAudioClips by remember { mutableStateOf<List<AudioClip>>(listOf()) }
+  // --- Document attachments (RAG) -------------------------------------------------
+  // Documents (text-bearing files) the user has attached. Each carries the scope
+  // (PERSISTENT -> on-disk RAG, TEMPORARY -> ephemeral per-request RAG).
+  var pickedDocuments by remember { mutableStateOf<List<DocumentAttachment>>(listOf()) }
+  // "Adjuntar memoria" toggle: when true, the persistent RAG is forcibly queried
+  // even if no permanent document is being attached in this request.
+  var useMemoryFlag by remember { mutableStateOf(false) }
+  // Scope of the next document picked. Set just before launching the picker.
+  var nextDocumentScope by remember { mutableStateOf(AttachmentScope.TEMPORARY) }
   var hasFrontCamera by remember { mutableStateOf(false) }
   val sensorObserver = remember { SensorObserver(context) }
 
@@ -199,8 +216,48 @@ fun MessageInputText(
   val holdAudioRecordState = remember { mutableStateOf<AudioRecord?>(null) }
   val holdAudioStream = remember { java.io.ByteArrayOutputStream() }
 
-  // Clean up hold-to-talk recorder on dispose.
-  DisposableEffect(Unit) { onDispose { holdAudioRecordState.value?.release() } }
+  // Tap-to-record (context) state. Declared at parent scope so it can be
+  // released on dispose and cleanly stopped when switching to other modes
+  // (e.g. conversation mode) independently from hold-to-talk.
+  var isContextRecording by remember { mutableStateOf(false) }
+  val contextAudioRecordState = remember { mutableStateOf<AudioRecord?>(null) }
+  val contextAudioStream = remember { java.io.ByteArrayOutputStream() }
+
+  // Clean up BOTH recorders on dispose. This guarantees the microphone is
+  // freed when the composable leaves the tree (e.g. when the user switches
+  // to conversation mode, which replaces this input with AudioRecorderPanel).
+  DisposableEffect(Unit) {
+    onDispose {
+      try {
+        holdAudioRecordState.value?.let { rec ->
+          if (rec.recordingState == AudioRecord.RECORDSTATE_RECORDING) rec.stop()
+          rec.release()
+        }
+      } catch (_: Throwable) {}
+      holdAudioRecordState.value = null
+      try {
+        contextAudioRecordState.value?.let { rec ->
+          if (rec.recordingState == AudioRecord.RECORDSTATE_RECORDING) rec.stop()
+          rec.release()
+        }
+      } catch (_: Throwable) {}
+      contextAudioRecordState.value = null
+    }
+  }
+
+  // Helper to fully stop any ongoing hold/context recording without sending.
+  // Used when transitioning to the other recording mode (conversation mode).
+  val stopAnyActiveRecording: () -> Unit = {
+    if (isHoldRecording) {
+      stopHoldToTalkRecording(holdAudioRecordState, holdAudioStream)
+      isHoldRecording = false
+    }
+    if (isContextRecording) {
+      stopHoldToTalkRecording(contextAudioRecordState, contextAudioStream)
+      isContextRecording = false
+    }
+    onSetAudioRecorderVisible(false)
+  }
 
   val updatePickedImages: (List<Bitmap>) -> Unit = { bitmaps ->
     val isAiCore = modelManagerUiState.selectedModel.runtimeType == RuntimeType.AICORE
@@ -311,6 +368,80 @@ fun MessageInputText(
       }
     }
 
+  // Registers a document picker. Can pick multiple text-bearing files.
+  // The scope of the resulting attachments is decided by [nextDocumentScope], which the
+  // dropdown menu sets immediately before launching the picker.
+  val pickDocuments =
+    rememberLauncherForActivityResult(
+      contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+      if (uris.isNotEmpty()) {
+        val resolver = context.contentResolver
+        val newDocs = uris.mapNotNull { uri ->
+          // Persist read permission so we can still read on send.
+          try {
+            resolver.takePersistableUriPermission(
+              uri,
+              android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+          } catch (_: Throwable) { /* picker URIs are read-allowed for session in any case */ }
+
+          var displayName = uri.lastPathSegment ?: "document"
+          var size = -1L
+          try {
+            resolver.query(uri, null, null, null, null)?.use { cursor ->
+              if (cursor.moveToFirst()) {
+                val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIdx >= 0 && !cursor.isNull(nameIdx)) displayName = cursor.getString(nameIdx)
+                val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeIdx >= 0 && !cursor.isNull(sizeIdx)) size = cursor.getLong(sizeIdx)
+              }
+            }
+          } catch (t: Throwable) {
+            Log.w(TAG, "Could not query metadata for $uri", t)
+          }
+
+          val ext = displayName.substringAfterLast('.', "").lowercase()
+          val mime = resolver.getType(uri)
+          val supported = ext in DocumentTextExtractor.SUPPORTED_EXTENSIONS ||
+            mime?.startsWith("text/") == true ||
+            mime == "application/json" ||
+            mime == "application/xml" ||
+            mime == "application/rtf" ||
+            mime == "application/pdf"
+          if (!supported) {
+            Log.w(TAG, "Rejected unsupported document: $displayName ($mime)")
+            return@mapNotNull null
+          }
+          DocumentAttachment(
+            uri = uri,
+            displayName = displayName,
+            sizeBytes = size,
+            mimeType = mime,
+            scope = nextDocumentScope,
+          )
+        }
+        if (newDocs.isNotEmpty()) {
+          pickedDocuments = pickedDocuments + newDocs
+        }
+      }
+    }
+
+  // Stage attached documents + memory flag into the RAG coordinator and clear local UI
+  // state. Called right before every onSendMessage invocation so the screen/view-model
+  // side can pick them up and augment the prompt with retrieved context.
+  val stageRagAndClear: () -> Unit = {
+    modelManagerViewModel.chatAttachments.stage(
+      conversationKey = modelManagerUiState.selectedModel.name,
+      staging = PendingRagStaging(
+        documents = pickedDocuments,
+        forceMemory = useMemoryFlag,
+      ),
+    )
+    pickedDocuments = listOf()
+    useMemoryFlag = false
+  }
+
   DisposableEffect(lifecycleOwner) {
     lifecycleOwner.lifecycle.addObserver(sensorObserver)
     onDispose { lifecycleOwner.lifecycle.removeObserver(sensorObserver) }
@@ -360,6 +491,93 @@ fun MessageInputText(
               pickedAudioClips = pickedAudioClips.filterIndexed { curIndex, curAudioData ->
                 curIndex != index
               }
+            }
+          }
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+      }
+    }
+
+    // A second preview row dedicated to document attachments + memory toggle.
+    if (pickedDocuments.isNotEmpty() || useMemoryFlag) {
+      Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Spacer(modifier = Modifier.width(16.dp))
+
+        if (useMemoryFlag) {
+          Box(contentAlignment = Alignment.TopEnd) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(6.dp),
+              modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .border(
+                  1.dp,
+                  MaterialTheme.colorScheme.outline,
+                  RoundedCornerShape(16.dp),
+                )
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+              Icon(
+                Icons.Rounded.Psychology,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+              )
+              Text(
+                text = "Memoria",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+              )
+            }
+            MediaPanelCloseButton { useMemoryFlag = false }
+          }
+        }
+
+        for ((index, doc) in pickedDocuments.withIndex()) {
+          Box(contentAlignment = Alignment.TopEnd) {
+            val isPersistent = doc.scope == AttachmentScope.PERSISTENT
+            val bg =
+              if (isPersistent) MaterialTheme.colorScheme.primaryContainer
+              else MaterialTheme.colorScheme.surfaceVariant
+            val fg =
+              if (isPersistent) MaterialTheme.colorScheme.onPrimaryContainer
+              else MaterialTheme.colorScheme.onSurfaceVariant
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(6.dp),
+              modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(bg)
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+              Icon(
+                Icons.Outlined.Description,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = fg,
+              )
+              Column {
+                Text(
+                  text = doc.displayName,
+                  style = MaterialTheme.typography.labelMedium,
+                  color = fg,
+                  maxLines = 1,
+                )
+                Text(
+                  text = if (isPersistent) "Permanente" else "Temporal",
+                  style = MaterialTheme.typography.labelSmall,
+                  color = fg.copy(alpha = 0.75f),
+                )
+              }
+            }
+            MediaPanelCloseButton {
+              pickedDocuments = pickedDocuments.filterIndexed { i, _ -> i != index }
             }
           }
         }
@@ -520,6 +738,62 @@ fun MessageInputText(
 
                       // Audio menu items removed - mic button is now permanently visible next to send.
 
+                      // Attach a TEMPORARY document (ephemeral RAG for this request only).
+                      DropdownMenuItem(
+                        text = {
+                          Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                          ) {
+                            Icon(Icons.Rounded.AttachFile, contentDescription = null)
+                            Text("Adjuntar documento (temporal)")
+                          }
+                        },
+                        onClick = {
+                          showAddContentMenu = false
+                          nextDocumentScope = AttachmentScope.TEMPORARY
+                          pickDocuments.launch(DocumentTextExtractor.PICKER_MIME_TYPES)
+                        },
+                      )
+
+                      // Attach a PERSISTENT document (goes into the on-disk RAG).
+                      DropdownMenuItem(
+                        text = {
+                          Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                          ) {
+                            Icon(Icons.Outlined.Description, contentDescription = null)
+                            Text("Adjuntar documento (permanente)")
+                          }
+                        },
+                        onClick = {
+                          showAddContentMenu = false
+                          nextDocumentScope = AttachmentScope.PERSISTENT
+                          pickDocuments.launch(DocumentTextExtractor.PICKER_MIME_TYPES)
+                        },
+                      )
+
+                      // Toggle "Adjuntar memoria": forces the persistent RAG to be queried.
+                      DropdownMenuItem(
+                        text = {
+                          Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                          ) {
+                            Icon(Icons.Rounded.Psychology, contentDescription = null)
+                            Text(
+                              if (useMemoryFlag) "Quitar memoria"
+                              else "Adjuntar memoria"
+                            )
+                          }
+                        },
+                        onClick = {
+                          useMemoryFlag = !useMemoryFlag
+                          showAddContentMenu = false
+                        },
+                      )
+
                       // Prompt history.
                       DropdownMenuItem(
                         text = {
@@ -549,10 +823,9 @@ fun MessageInputText(
                   horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                 // Audio record button: hold to send, tap to toggle context recording.
+                // State is declared at the outer scope so it is properly disposed
+                // and can be safely stopped when switching to other modes.
                 val holdEnabled = !inProgress && !isResettingSession && !modelInitializing
-                var isContextRecording by remember { mutableStateOf(false) }
-                val contextAudioRecordState = remember { mutableStateOf<AudioRecord?>(null) }
-                val contextAudioStream = remember { java.io.ByteArrayOutputStream() }
 
                 Box(
                   modifier = Modifier
@@ -580,22 +853,17 @@ fun MessageInputText(
                               }
 
                               // If context recording is active, stop it on any press
+                              // and attach the recorded clip as an audio attachment
+                              // (like a picked image/file). The user can keep
+                              // writing text and adding more attachments before
+                              // hitting "Send" normally.
                               if (isContextRecording) {
                                 val audioData = stopHoldToTalkRecording(contextAudioRecordState, contextAudioStream)
                                 isContextRecording = false
                                 onSetAudioRecorderVisible(false)
                                 if (audioData.isNotEmpty()) {
-                                  val audioClip = com.google.ai.edge.gallery.common.AudioClip(audioData = audioData, sampleRate = SAMPLE_RATE)
-                                  val combinedAudioClips = pickedAudioClips + listOf(audioClip)
-                                  onSendMessage(
-                                    createMessagesToSend(
-                                      pickedImages = pickedImages,
-                                      audioClips = combinedAudioClips,
-                                      text = curMessage.trim(),
-                                    )
-                                  )
-                                  pickedImages = listOf()
-                                  pickedAudioClips = listOf()
+                                  val audioClip = AudioClip(audioData = audioData, sampleRate = SAMPLE_RATE)
+                                  updatePickedAudioClips(listOf(audioClip))
                                 }
                                 return@detectTapGestures
                               }
@@ -639,6 +907,7 @@ fun MessageInputText(
                                 if (audioData.isNotEmpty()) {
                                   val audioClip = com.google.ai.edge.gallery.common.AudioClip(audioData = audioData, sampleRate = SAMPLE_RATE)
                                   val combinedAudioClips = pickedAudioClips + listOf(audioClip)
+                                  stageRagAndClear()
                                   onSendMessage(
                                     createMessagesToSend(
                                       pickedImages = pickedImages,
@@ -677,7 +946,13 @@ fun MessageInputText(
                       if (convEnabled) MaterialTheme.colorScheme.tertiaryContainer
                       else MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
                     )
-                    .then(if (convEnabled) Modifier.clickable { onConversationModeClicked() } else Modifier),
+                    .then(if (convEnabled) Modifier.clickable {
+                      // Ensure the hold/tap recorder is fully released before
+                      // the conversation mode's own AudioRecord tries to claim
+                      // the microphone. This makes both modes independent.
+                      stopAnyActiveRecording()
+                      onConversationModeClicked()
+                    } else Modifier),
                   contentAlignment = Alignment.Center,
                 ) {
                   Icon(
@@ -722,6 +997,7 @@ fun MessageInputText(
                       )
                       .then(if (sendEnabled) Modifier.clickable {
                         var message = curMessage.trim()
+                        stageRagAndClear()
                         onSendMessage(
                           createMessagesToSend(
                             pickedImages = pickedImages,
@@ -754,6 +1030,7 @@ fun MessageInputText(
       history = modelManagerUiState.textInputHistory,
       onDismissed = { showTextInputHistorySheet = false },
       onHistoryItemClicked = { item ->
+        stageRagAndClear()
         onSendMessage(
           createMessagesToSend(
             pickedImages = pickedImages,
@@ -1226,11 +1503,17 @@ private fun stopHoldToTalkRecording(
   audioStream: java.io.ByteArrayOutputStream,
 ): ByteArray {
   audioRecordState.value?.let { recorder ->
-    if (recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-      recorder.stop()
-    }
-    recorder.release()
+    try {
+      if (recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+        recorder.stop()
+      }
+    } catch (_: Throwable) {}
+    try { recorder.release() } catch (_: Throwable) {}
   }
   audioRecordState.value = null
-  return audioStream.toByteArray()
+  val bytes = audioStream.toByteArray()
+  // Reset so a subsequent recording session starts from an empty buffer even
+  // if startHoldToTalkRecording isn't immediately invoked.
+  audioStream.reset()
+  return bytes
 }
