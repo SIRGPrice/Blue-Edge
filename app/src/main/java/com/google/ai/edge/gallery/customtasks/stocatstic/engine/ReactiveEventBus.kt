@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.asSharedFlow
  * PhoneStateListener/TelephonyCallback, voicemail reader, ...).
  *
  * Consumers:
- *   * [TriggerScheduler] â€” subscribes one collector per workflow reactive trigger.
- *   * "Esperar ..." capabilities used mid-graph â€” `events.first { it.matches(filter) }`.
+ *   * [TriggerScheduler] — subscribes one collector per workflow reactive trigger.
+ *   * "Esperar ..." capabilities used mid-graph — `events.first { it.matches(filter) }`.
  *
  * All events carry a stable shape (sender, body, attachment, package) so downstream nodes
- * â€” including the multimodal [LlmDecisionCapability] â€” can consume them uniformly via
+ * — including the multimodal [LlmDecisionCapability] — can consume them uniformly via
  * the standard `sender` / `body` / `attachmentUri` / `out` ports.
  */
 sealed class ReactiveEvent {
@@ -105,5 +105,4 @@ private fun String.equalsLoose(other: String): Boolean {
   val b = other.filter { !it.isWhitespace() && it != '-' }
   return a.equals(b, ignoreCase = true) || a.endsWith(b) || b.endsWith(a)
 }
-
 

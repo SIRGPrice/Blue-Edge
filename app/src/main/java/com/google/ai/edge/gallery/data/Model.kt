@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -375,4 +375,3 @@ data class ModelDownloadStatus(
 
 val EMPTY_MODEL: Model =
   Model(name = "empty", downloadFileName = "empty.tflite", url = "", sizeInBytes = 0L)
-

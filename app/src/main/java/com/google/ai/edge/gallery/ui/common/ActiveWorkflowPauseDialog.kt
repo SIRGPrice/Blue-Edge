@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -24,13 +24,12 @@ fun ActiveWorkflowPauseDialog(
     title = { Text("Tarea de IA en curso") },
     text = {
       Text(
-        "Un flujo de StoCATstic estÃ¡ usando el modelo. Puedes pausarlo para usar el chat " +
-          "ahora, o mantenerlo en segundo plano (el chat quedarÃ¡ en cola)."
+        "Un flujo de StoCATstic está usando el modelo. Puedes pausarlo para usar el chat " +
+          "ahora, o mantenerlo en segundo plano (el chat quedará en cola)."
       )
     },
     confirmButton = { TextButton(onClick = onPause) { Text("Pausar y abrir chat") } },
     dismissButton = { TextButton(onClick = onKeep) { Text("Mantener en segundo plano") } },
   )
 }
-
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 
 package com.google.ai.edge.gallery.ui.modelmanager
-
-import com.google.ai.edge.gallery.R
+
 import android.content.Context
 import android.util.Log
 import androidx.activity.result.ActivityResult
@@ -25,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.edge.gallery.AppLifecycleProvider
 import com.google.ai.edge.gallery.BuildConfig
+import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.common.ProjectConfig
 import com.google.ai.edge.gallery.common.getJsonResponse
 import com.google.ai.edge.gallery.common.isAICoreSupported
@@ -1442,4 +1442,3 @@ constructor(
 private fun getAllowlistUrl(version: String): String {
   return "$ALLOWLIST_BASE_URL/${version}.json"
 }
-

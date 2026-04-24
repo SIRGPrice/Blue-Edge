@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 
 package com.google.ai.edge.gallery.ui.common
-
-import com.google.ai.edge.gallery.R
+
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
@@ -26,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 
 private const val TAG = "AGMemoryWarning"
@@ -70,4 +70,3 @@ fun isMemoryLow(context: Context, model: Model): Boolean {
     false
   }
 }
-

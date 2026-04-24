@@ -3,7 +3,6 @@
  * Licensed under the Apache License, Version 2.0.
  */
 package com.google.ai.edge.gallery.runtime
-import com.google.ai.edge.gallery.R
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -14,6 +13,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.google.ai.edge.gallery.R
 /**
  * Tiny foreground service that keeps the app process alive (and therefore the loaded LLM in RAM)
  * while there are pending StoCATstic AI workflows. Started by [ModelLifecycleManager] when the app
@@ -54,4 +54,3 @@ class ModelKeepAliveService : Service() {
     private const val NOTIF_ID = 0x1337
   }
 }
-

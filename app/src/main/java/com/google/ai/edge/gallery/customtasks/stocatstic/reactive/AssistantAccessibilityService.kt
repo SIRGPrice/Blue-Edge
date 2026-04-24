@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -17,11 +17,11 @@ import kotlinx.coroutines.delay
 /**
  * StoCATstic automation service. Enabled manually by the user in Accessibility Settings. It
  * is used only as a **fallback** when a messaging notification's `RemoteInput` is no longer
- * available â€” in that case [AutomationController] opens the messaging app with a deep link
+ * available — in that case [AutomationController] opens the messaging app with a deep link
  * and this service clicks the on-screen "send" button so the reply goes through without
  * further user interaction.
  *
- * The service deliberately does nothing on normal events â€” it only acts when asked to by
+ * The service deliberately does nothing on normal events — it only acts when asked to by
  * [AutomationController] through its static snapshot of the active service instance.
  */
 class AssistantAccessibilityService : AccessibilityService() {
@@ -117,7 +117,7 @@ object AutomationController {
     val handle = username.removePrefix("@").trim()
     val uri = Uri.parse("https://t.me/$handle")
     ctx.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    // Telegram deep link doesn't pre-fill the message â€” write it ourselves and click send.
+    // Telegram deep link doesn't pre-fill the message — write it ourselves and click send.
     if (!pasteTextIntoEditable(body)) return false
     return clickSendButton(
       contentDescriptionsEs = listOf("Enviar"),
@@ -125,7 +125,7 @@ object AutomationController {
     )
   }
 
-  // ---------- Discord (best effort â€” no deep-link to DMs) ---------------------------------
+  // ---------- Discord (best effort — no deep-link to DMs) ---------------------------------
 
   private suspend fun sendDiscord(ctx: Context, @Suppress("UNUSED_PARAMETER") user: String, body: String): Boolean {
     // Open the app (launcher intent). User-specific DM deep links are not publicly supported,
@@ -211,5 +211,4 @@ object AutomationController {
     return null
   }
 }
-
 

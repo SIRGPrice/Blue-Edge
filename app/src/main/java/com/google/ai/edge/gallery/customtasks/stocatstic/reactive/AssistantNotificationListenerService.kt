@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -14,7 +14,7 @@ import com.google.ai.edge.gallery.customtasks.stocatstic.engine.ReactiveEvent
 import com.google.ai.edge.gallery.customtasks.stocatstic.engine.ReactiveEventBus
 import java.util.UUID
 
-/** Known messaging/email clients â€” used as the default filter for Notification-based triggers. */
+/** Known messaging/email clients — used as the default filter for Notification-based triggers. */
 object MessagingApps {
   const val WHATSAPP = "com.whatsapp"
   const val WHATSAPP_BUSINESS = "com.whatsapp.w4b"
@@ -136,5 +136,4 @@ object ReplyActionCache {
     byKey.keys.filter { it.startsWith(prefix) }.forEach { byKey.remove(it) }
   }
 }
-
 

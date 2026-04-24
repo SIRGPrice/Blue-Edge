@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -21,5 +21,4 @@ class CapabilityRegistry @Inject constructor(
   fun byCategory(): Map<CapabilityCategory, List<Capability>> =
     all().groupBy { it.category }
 }
-
 

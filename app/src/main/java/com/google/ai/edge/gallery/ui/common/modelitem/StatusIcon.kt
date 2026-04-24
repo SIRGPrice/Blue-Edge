@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 
 package com.google.ai.edge.gallery.ui.common.modelitem
-
-import com.google.ai.edge.gallery.R
+
 // import androidx.compose.ui.tooling.preview.Preview
 // import com.google.ai.edge.gallery.ui.theme.GalleryTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.MODEL_INFO_ICON_SIZE
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.ModelDownloadStatus
@@ -63,7 +63,7 @@ fun StatusIcon(
       }
     if (model.localFileRelativeDirPathOverride.isNotEmpty()) {
       Icon(
-        R.drawable.ic_d_ow_nl_oa_df_or_of_fl_in_e_24px,
+        Icons.Filled.DownloadForOffline,
         tint = color,
         contentDescription = stringResource(R.string.cd_downloaded_icon),
         modifier = Modifier.size(MODEL_INFO_ICON_SIZE),
@@ -72,7 +72,7 @@ fun StatusIcon(
       when (downloadStatus?.status) {
         ModelDownloadStatusType.NOT_DOWNLOADED ->
           Icon(
-            R.drawable.ic_h_el_po_ut_li_ne_24px,
+            Icons.AutoMirrored.Outlined.HelpOutline,
             tint = MaterialTheme.customColors.modelInfoIconColor,
             contentDescription = stringResource(R.string.cd_not_downloaded_icon),
             modifier = Modifier.size(MODEL_INFO_ICON_SIZE),
@@ -80,7 +80,7 @@ fun StatusIcon(
 
         ModelDownloadStatusType.SUCCEEDED -> {
           Icon(
-            R.drawable.ic_d_ow_nl_oa_df_or_of_fl_in_e_24px,
+            Icons.Filled.DownloadForOffline,
             tint = color,
             contentDescription = stringResource(R.string.cd_downloaded_icon),
             modifier = Modifier.size(MODEL_INFO_ICON_SIZE),
@@ -89,7 +89,7 @@ fun StatusIcon(
 
         ModelDownloadStatusType.FAILED ->
           Icon(
-            R.drawable.ic_e_rr_or_24px,
+            Icons.Rounded.Error,
             tint = Color(0xFFAA0000),
             contentDescription = stringResource(R.string.cd_download_failed_icon),
             modifier = Modifier.size(MODEL_INFO_ICON_SIZE),
@@ -97,7 +97,7 @@ fun StatusIcon(
 
         ModelDownloadStatusType.IN_PROGRESS ->
           Icon(
-            R.drawable.ic_d_ow_nl_oa_di_ng_24px,
+            Icons.Rounded.Downloading,
             contentDescription = stringResource(R.string.cd_downloading_icon),
             modifier = Modifier.size(MODEL_INFO_ICON_SIZE),
           )
@@ -127,5 +127,3 @@ fun StatusIcon(
 //     }
 //   }
 // }
-
-

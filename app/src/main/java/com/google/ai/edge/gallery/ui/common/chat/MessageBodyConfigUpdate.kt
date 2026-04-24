@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -134,7 +134,7 @@ fun MessageBodyConfigUpdate(message: ChatMessageConfigValuesChange) {
                     append(rowData.oldValueDisplay)
                   }
                   withStyle(style = bodySmallNarrow.copy(fontSize = 12.sp).toSpanStyle()) {
-                    append(" â–¸ ") // Added spaces for visual separation
+                    append(" ▸ ") // Added spaces for visual separation
                   }
                   withStyle(
                     style =
@@ -155,4 +155,3 @@ fun MessageBodyConfigUpdate(message: ChatMessageConfigValuesChange) {
     }
   }
 }
-

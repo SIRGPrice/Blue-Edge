@@ -1,22 +1,21 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
 package com.google.ai.edge.gallery.customtasks.stocatstic.ui.scene
-
-import com.google.ai.edge.gallery.R
+
 import com.google.ai.edge.gallery.customtasks.stocatstic.ui.assets.DecorationCatalog
 
 /**
  * Deterministic blue-noise-ish sampler for random world decorations.
  *
- *   â€¢ Divides the infinite plane into [DecorationCatalog.MIN_SPACING_CELLS]-sized blocks.
+ *   • Divides the infinite plane into [DecorationCatalog.MIN_SPACING_CELLS]-sized blocks.
  *     A single candidate cell is picked inside each block by hashing `(bx, by)` so that,
- *     at most, ONE decoration lives in every block â€” which guarantees any two decorations
- *     are â‰¥ `MIN_SPACING_CELLS` cells apart.
- *   â€¢ A candidate is discarded when any cell inside the same Chebyshev radius belongs to
+ *     at most, ONE decoration lives in every block — which guarantees any two decorations
+ *     are ≥ `MIN_SPACING_CELLS` cells apart.
+ *   • A candidate is discarded when any cell inside the same Chebyshev radius belongs to
  *     a workflow node, a workflow path, or has been manually deleted by the user.
- *   â€¢ The chosen [DecorationCatalog.Entry] index is also deterministic per block, so
+ *   • The chosen [DecorationCatalog.Entry] index is also deterministic per block, so
  *     scrolling back and forth produces the same scene.
  *
  * The function returns `null` when the cell has no decoration (either because the block's
@@ -84,5 +83,4 @@ internal object DecorationSampler {
     return if ((r xor b) < 0 && r != 0) r + b else r
   }
 }
-
 

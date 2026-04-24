@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,4 +36,3 @@ object UserDataSerializer : Serializer<UserData> {
 
   override suspend fun writeTo(t: UserData, output: OutputStream) = t.writeTo(output)
 }
-

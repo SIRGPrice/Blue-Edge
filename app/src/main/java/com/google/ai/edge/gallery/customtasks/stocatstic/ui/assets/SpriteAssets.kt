@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Loads sprite PNGs from /assets/stocatstic/ with nearest-neighbor scaling (pixel-perfect).
- * Safe to call repeatedly â€” bitmaps are cached per path. Missing assets return null so the
+ * Safe to call repeatedly — bitmaps are cached per path. Missing assets return null so the
  * caller can fall back to procedural drawing until the paid pack is installed.
  */
 object SpriteAssets {
@@ -45,7 +45,7 @@ object SpriteAssets {
 
 /**
  * A sprite-sheet with [cols] frames across and [rows] directions down. Layout convention used by
- * Little Dreamyland: row 0 = down, 1 = left, 2 = right, 3 = up; each cell is 48Ã—48.
+ * Little Dreamyland: row 0 = down, 1 = left, 2 = right, 3 = up; each cell is 48×48.
  */
 data class SpriteSheet(
   val image: ImageBitmap,
@@ -122,7 +122,7 @@ fun DrawScope.drawTiledBackground(
 /**
  * Asset paths bundled under `app/src/main/assets/stocatstic/`.
  *
- * âš ï¸ Android assets are case-sensitive at runtime: these strings MUST match the actual
+ * ⚠️ Android assets are case-sensitive at runtime: these strings MUST match the actual
  * folder and file casing on disk (PascalCase / UPPERCASE after the vendor restructured the
  * pack). Update here if files are renamed.
  */
@@ -132,7 +132,7 @@ object SpritePaths {
   // --- Tilesets -------------------------------------------------------------------------------
   /** Autotile for dirt paths only (NOT used as the flat grass anymore). */
   const val TILE_GRASS_AUTOTILE = "$ROOT/Tilesets/Autotile_Grass_and_Dirt_Path_Tileset.png"
-  /** Flat, efficient grass tileset â€” source of the continuous ground layer. */
+  /** Flat, efficient grass tileset — source of the continuous ground layer. */
   const val TILE_FLOOR_DETAIL   = "$ROOT/Tilesets/Tileset_Floor_Detail.png"
   const val TILE_NATURE         = "$ROOT/Tilesets/Nature_Tileset.png"
   const val TILE_EXTERIOR       = "$ROOT/Tilesets/Exterior_Tileset.png"
@@ -141,7 +141,7 @@ object SpritePaths {
   const val TILE_HOUSE          = "$ROOT/Tilesets/House_Tileset.png"
   const val TILE_UI             = "$ROOT/Tilesets/UI_Tileset.png"
 
-  // --- Object animations (single-row strips, 16Ã—16 frames) ------------------------------------
+  // --- Object animations (single-row strips, 16×16 frames) ------------------------------------
   const val OBJ_CAMPFIRE = "$ROOT/Object Animation/Campfire.png"
   const val OBJ_FOUNTAIN = "$ROOT/Object Animation/Fountain.png"
   const val OBJ_CHEST    = "$ROOT/Object Animation/Chest.png"
@@ -163,7 +163,7 @@ object SpritePaths {
   const val BUNNY_SHADOW = "$ROOT/Sprite_Shadow.png"
 }
 
-/** Column counts for each bunny sheet (all use 4 directional rows of 48Ã—48 frames). */
+/** Column counts for each bunny sheet (all use 4 directional rows of 48×48 frames). */
 object BunnySheets {
   const val ROWS = 4
   const val IDLE_COLS = 5
@@ -178,15 +178,15 @@ object BunnySheets {
 /**
  * Terrain / path tile coordinates.
  *
- *   â€¢ `GRASS_BASE` points at a pure-grass cell inside
+ *   • `GRASS_BASE` points at a pure-grass cell inside
  *     `Autotile_Grass_and_Dirt_Path_Tileset.png` (the Little Dreamyland autotile is the actual
  *     grass tileset; `Tileset_Floor_Detail.png` is wooden floor detail and can't be used as
- *     outdoor ground). The base grass is tiled flat across the world â€” no autotile logic.
- *   â€¢ `DIRT_VARIANTS` also live in the autotile sheet and are used by the workflow-path
+ *     outdoor ground). The base grass is tiled flat across the world — no autotile logic.
+ *   • `DIRT_VARIANTS` also live in the autotile sheet and are used by the workflow-path
  *     rasterizer to paint dirt sprites.
  *
  * If the user prefers a different grass variant, only the `GRASS_BASE` coordinates need to
- * change â€” the renderer picks it up on the next frame.
+ * change — the renderer picks it up on the next frame.
  */
 object GrassAutotile {
   /**
@@ -203,7 +203,7 @@ object GrassAutotile {
   val DIRT_VARIANTS: List<Pair<Int, Int>> = listOf(DIRT_BASE)
 
   /**
-   * "Leaves-on-ground" sprite drawn on every path cell â€” now the ONLY overlay representing
+   * "Leaves-on-ground" sprite drawn on every path cell — now the ONLY overlay representing
    * the workflow trail (grass shows through, no dirt underneath). Points at a small
    * scattered-leaves tile inside `Nature_Tileset.png`. Tweak (col,row) if you want a
    * different prop.
@@ -214,31 +214,31 @@ object GrassAutotile {
 }
 
 /**
- * Mailbox sprite used as the visual marker of the FIRST task of every workflow ("buzÃ³n").
+ * Mailbox sprite used as the visual marker of the FIRST task of every workflow ("buzón").
  * All non-root tasks use small 1-cell flowers/plants from `Crops_Tileset.png` instead.
  * Tweak `MAILBOX_TILE` coordinates if the vendor re-exports the sheet.
  */
 object MailboxSprite {
   const val ASSET = SpritePaths.TILE_EXTERIOR
-  /** 16Ã—16 sub-tile inside Exterior_Tileset.png. */
+  /** 16×16 sub-tile inside Exterior_Tileset.png. */
   val MAILBOX_TILE: Pair<Int, Int> = 12 to 4
 }
 
 /**
  * Catalog of world decorations placed on grass cells. Each entry references a rectangular
- * patch of a tileset measured in CELL units (1 CELL = 2 source 16Ã—16 tiles because
- * `TILE_SIZE = 24` world px â†’ `CELL = 48` world px = 2 tiles). Selection is deterministic per
+ * patch of a tileset measured in CELL units (1 CELL = 2 source 16×16 tiles because
+ * `TILE_SIZE = 24` world px → `CELL = 48` world px = 2 tiles). Selection is deterministic per
  * world cell so scrolling back produces the same scene.
  *
- * Decorations never overlap workflow paths or task sprites â€” the terrain renderer skips any
+ * Decorations never overlap workflow paths or task sprites — the terrain renderer skips any
  * cell flagged in `pathCells` or `nodeCells`.
  */
 object DecorationCatalog {
   data class Entry(
     val assetPath: String,
-    /** Source column in 16Ã—16 tiles. */
+    /** Source column in 16×16 tiles. */
     val col: Int,
-    /** Source row in 16Ã—16 tiles. */
+    /** Source row in 16×16 tiles. */
     val row: Int,
   )
 
@@ -246,19 +246,19 @@ object DecorationCatalog {
    * Minimum distance (in cells, Chebyshev) between any two random decorations, AND between
    * any decoration and the nearest workflow node or path cell. When a workflow moves closer
    * than this many cells to a decoration, the decoration vanishes automatically. This
-   * number is also the block size used by the deterministic sampler â€” decorations are
-   * candidate-picked at most once per [MIN_SPACING_CELLS] Ã— [MIN_SPACING_CELLS] block.
+   * number is also the block size used by the deterministic sampler — decorations are
+   * candidate-picked at most once per [MIN_SPACING_CELLS] × [MIN_SPACING_CELLS] block.
    */
   const val MIN_SPACING_CELLS: Int = 10
 
   /**
    * Pool of small 1-cell decorations (plants, flowers, logs). NO multi-cell sprites, NO
-   * animated strips â€” everything occupies exactly one CELL so it always quantises cleanly
-   * to the world grid. Coordinates point at the `Nature_Tileset.png` 16Ã—16 sub-grid;
+   * animated strips — everything occupies exactly one CELL so it always quantises cleanly
+   * to the world grid. Coordinates point at the `Nature_Tileset.png` 16×16 sub-grid;
    * tweak a pair to swap a prop.
    */
   val ENTRIES: List<Entry> = listOf(
-    // Small plants / bushes (row 0â€“2 of the nature sheet).
+    // Small plants / bushes (row 0–2 of the nature sheet).
     Entry(SpritePaths.TILE_NATURE, col = 0,  row = 0),
     Entry(SpritePaths.TILE_NATURE, col = 2,  row = 0),
     Entry(SpritePaths.TILE_NATURE, col = 4,  row = 0),
@@ -267,10 +267,9 @@ object DecorationCatalog {
     Entry(SpritePaths.TILE_NATURE, col = 0,  row = 2),
     Entry(SpritePaths.TILE_NATURE, col = 2,  row = 2),
     Entry(SpritePaths.TILE_NATURE, col = 4,  row = 2),
-    // Logs / stumps (row 4â€“5).
+    // Logs / stumps (row 4–5).
     Entry(SpritePaths.TILE_NATURE, col = 0,  row = 4),
     Entry(SpritePaths.TILE_NATURE, col = 2,  row = 4),
     Entry(SpritePaths.TILE_NATURE, col = 4,  row = 4),
   )
 }
-

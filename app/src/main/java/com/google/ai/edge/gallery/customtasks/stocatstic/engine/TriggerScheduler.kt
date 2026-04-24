@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -64,7 +64,7 @@ class TriggerScheduler @Inject constructor(
       }
     }
     // Ergonomic auto-wiring: if the workflow has no explicit reactive trigger but its root
-    // node is a reactive "Esperar â€¦" capability, derive the trigger from the node's config.
+    // node is a reactive "Esperar …" capability, derive the trigger from the node's config.
     // This lets the user simply drop a "Esperar SMS" node at the start of the flow and the
     // workflow will spring to life whenever a matching event arrives.
     if (workflow.triggers.none { it.isReactive() }) {
@@ -115,7 +115,7 @@ class TriggerScheduler @Inject constructor(
       this is WorkflowTrigger.CallMissed
 
   /**
-   * If the workflow's first node is one of the `trigger.*` "Esperar â€¦" capabilities, build the
+   * If the workflow's first node is one of the `trigger.*` "Esperar …" capabilities, build the
    * matching reactive [WorkflowTrigger] from its `mode + senders` config. This way the user
    * doesn't have to separately declare a trigger: placing the capability on the graph is enough.
    */
@@ -205,5 +205,4 @@ class TriggerScheduler @Inject constructor(
 
   private fun workTag(id: String) = "stocatstic-$id"
 }
-
 

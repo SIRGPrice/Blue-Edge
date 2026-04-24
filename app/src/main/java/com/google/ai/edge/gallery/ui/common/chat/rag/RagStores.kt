@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 BlueEdge contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
@@ -25,5 +25,4 @@ class TemporaryRagStore : RagStore by FtsRagStore(
   dbFactory = { SQLiteDatabase.create(null) /* :memory: */ },
   origin = RagOrigin.TEMPORARY,
 )
-
 

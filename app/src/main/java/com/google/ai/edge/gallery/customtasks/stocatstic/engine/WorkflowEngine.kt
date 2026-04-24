@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Blue Edge.
  * Licensed under the Apache License, Version 2.0.
  */
@@ -70,7 +70,7 @@ class WorkflowEngine @Inject constructor(
 
   /**
    * Executes [workflow] starting from [startNodeId] (or all roots when null). Useful for the
-   * "Ejecutar" action on a single selected task â€” the user sees that specific task run even
+   * "Ejecutar" action on a single selected task — the user sees that specific task run even
    * when it is not the root of the flow.
    */
   suspend fun runFrom(workflow: Workflow, startNodeId: String?): Boolean {
@@ -148,7 +148,7 @@ class WorkflowEngine @Inject constructor(
     val result: NodeResult = try {
       cap.execute(ctx, node.config)
     } catch (t: Throwable) {
-      NodeResult.fail(t.message ?: "excepciÃ³n")
+      NodeResult.fail(t.message ?: "excepción")
     }
     outputs[node.id] = result.outputs + ("out" to (result.outputs["out"]
       ?: (inputs["in"] ?: JsonPrimitive(""))))
@@ -167,11 +167,11 @@ class WorkflowEngine @Inject constructor(
     }
     if (successors.isEmpty()) return true
     // Branch policy for the UI bunny:
-    //   â€¢ Conditional node â†’ only the TRUE_BRANCH successor(s) get a bunny.
-    //   â€¢ Non-conditional fan-out â†’ every parallel successor gets its own bunny.
+    //   • Conditional node → only the TRUE_BRANCH successor(s) get a bunny.
+    //   • Non-conditional fan-out → every parallel successor gets its own bunny.
     // A fresh branchId is minted when the parent has >1 effective successor (or when
     // the single successor is a TRUE_BRANCH, so the bunny visually forks at the branch).
-    // Otherwise the current branchId is reused (straight chain â†’ same bunny).
+    // Otherwise the current branchId is reused (straight chain → same bunny).
     val forks = successors.size > 1 ||
       successors.any { it.kind == WorkflowEdge.EdgeKind.TRUE_BRANCH }
     return coroutineScope {
@@ -183,4 +183,3 @@ class WorkflowEngine @Inject constructor(
     }
   }
 }
-
