@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
       - uses: android-actions/setup-android@v3
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -50,7 +50,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
       - name: Compile shared for iOS simulator
         run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace
 
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
       - name: Install xcodegen + cocoapods
         run: |
           brew install xcodegen
@@ -104,7 +104,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
       - name: Install xcodegen + cocoapods
         run: |
           brew install xcodegen
