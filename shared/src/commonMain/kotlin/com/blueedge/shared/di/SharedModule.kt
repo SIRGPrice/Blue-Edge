@@ -19,6 +19,8 @@ import com.blueedge.shared.audio.provideAudioPlayer
 import com.blueedge.shared.audio.provideAudioRecorder
 import com.blueedge.shared.chat.ChatViewModel
 import com.blueedge.shared.domain.ModelStorage
+import com.blueedge.shared.domain.ModelImporter
+import com.blueedge.shared.domain.provideModelImporter
 import com.blueedge.shared.domain.provideModelStorage
 import com.blueedge.shared.download.DownloadManager
 import com.blueedge.shared.download.provideDownloadManager
@@ -28,6 +30,9 @@ import com.blueedge.shared.storage.SecureStorage
 import com.blueedge.shared.storage.SettingsRepository
 import com.blueedge.shared.storage.provideSecureStorage
 import com.blueedge.shared.storage.provideSettings
+import com.blueedge.shared.ui.benchmark.BenchmarkRunner
+import com.blueedge.shared.ui.benchmark.BenchmarkViewModel
+import com.blueedge.shared.ui.modelmanager.ModelManagerViewModel
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -36,11 +41,15 @@ val sharedCoreModule: Module = module {
   single<DownloadManager> { provideDownloadManager() }
   single<OAuthClient> { provideOAuthClient() }
   single<ModelStorage> { provideModelStorage() }
+  single<ModelImporter> { provideModelImporter() }
   single<SecureStorage> { provideSecureStorage() }
   single<AudioRecorder> { provideAudioRecorder() }
   single<AudioPlayer> { provideAudioPlayer() }
   single { SettingsRepository(provideSettings()) }
-  factory { ChatViewModel() }
+  single { BenchmarkRunner(get()) }
+  factory { ChatViewModel(settings = get()) }
+  factory { BenchmarkViewModel(runner = get(), storage = get(), settings = get()) }
+  factory { ModelManagerViewModel(storage = get(), engine = get(), settings = get(), importer = get()) }
 }
 
 fun sharedModules(): List<Module> = listOf(sharedCoreModule)

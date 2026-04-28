@@ -73,6 +73,17 @@ class SettingsRepository(private val settings: Settings) {
     get() = getBoolean(KEY_HAS_SEEN_BENCH_HELP, default = false)
     set(value) { putBoolean(KEY_HAS_SEEN_BENCH_HELP, value) }
 
+  /**
+   * Absolute path to the last model that was successfully loaded into the
+   * shared `LlmEngine`. Used by the benchmark screen to pre-select a model.
+   */
+  var lastLoadedModelPath: String?
+    get() = settings.getStringOrNull(KEY_LAST_LOADED_MODEL_PATH)
+    set(value) {
+      if (value.isNullOrBlank()) settings.remove(KEY_LAST_LOADED_MODEL_PATH)
+      else settings.putString(KEY_LAST_LOADED_MODEL_PATH, value)
+    }
+
   companion object {
     const val KEY_THEME = "blueedge.theme"
     const val KEY_TEXT_INPUT_HISTORY = "blueedge.text_input_history"
@@ -80,6 +91,7 @@ class SettingsRepository(private val settings: Settings) {
     const val KEY_GEMMA_TOS_ACCEPTED = "blueedge.gemma_tos_accepted"
     const val KEY_HAS_RUN_TINY_GARDEN = "blueedge.has_run_tiny_garden"
     const val KEY_HAS_SEEN_BENCH_HELP = "blueedge.has_seen_bench_help"
+    const val KEY_LAST_LOADED_MODEL_PATH = "blueedge.last_loaded_model_path"
   }
 }
 

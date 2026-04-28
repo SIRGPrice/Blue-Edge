@@ -11,6 +11,7 @@ import com.blueedge.shared.runtime.LlmEvent
 import com.blueedge.shared.runtime.LlmGenerationConfig
 import com.blueedge.shared.runtime.LlmModelDescriptor
 import com.blueedge.shared.runtime.createLlmEngine
+import com.blueedge.shared.storage.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,6 +39,7 @@ data class ChatUiState(
 
 class ChatViewModel(
   private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+  private val settings: SettingsRepository? = null,
 ) {
   private val engine = createLlmEngine()
 
@@ -46,11 +48,20 @@ class ChatViewModel(
 
   private var generationJob: Job? = null
 
+  init {
+    // If a previous session loaded a model, hydrate the engine eagerly so
+    // the user can start chatting straight away.
+    settings?.lastLoadedModelPath
+      ?.takeIf { it.isNotBlank() }
+      ?.let { path -> loadModel(LlmModelDescriptor(modelPath = path)) }
+  }
+
   fun loadModel(descriptor: LlmModelDescriptor) {
     scope.launch {
       runCatching {
         if (engine.isAvailable(descriptor)) engine.load(descriptor)
       }.onSuccess {
+        settings?.lastLoadedModelPath = descriptor.modelPath
         _state.value = _state.value.copy(isModelReady = true, errorMessage = null)
       }.onFailure { e ->
         _state.value = _state.value.copy(

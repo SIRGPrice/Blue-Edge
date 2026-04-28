@@ -17,6 +17,10 @@ interface LlmBridgeIos {
   fun load(modelPath: String, maxTokens: Int, preferGpu: Boolean)
   fun generate(
     prompt: String,
+    temperature: Float,
+    topK: Int,
+    topP: Float,
+    randomSeed: Int,
     onToken: (String) -> Unit,
     onError: (String) -> Unit,
     onDone: () -> Unit,
@@ -51,10 +55,21 @@ interface DownloadBridgeIos {
   fun cancel(id: String)
 }
 
+/** Implemented by `BlueEdgeModelImportBridge.swift`. */
+interface ModelImportBridgeIos {
+  /**
+   * Presents a `UIDocumentPickerViewController`, copies the picked files
+   * into the platform models directory and invokes [onResult] with the list
+   * of resulting absolute paths (empty if the user cancelled).
+   */
+  fun pickAndImport(onResult: (List<String>) -> Unit)
+}
+
 /** Aggregate handed once from Swift to Kotlin at app launch. */
 data class BlueEdgeIosBridges(
   val llm: LlmBridgeIos,
   val auth: AuthBridgeIos,
   val download: DownloadBridgeIos,
+  val modelImport: ModelImportBridgeIos? = null,
 )
 

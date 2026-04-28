@@ -1,9 +1,9 @@
 /*
  * Copyright 2026 Blue Edge contributors.
  *
- * Lightweight shared model manager. It lists first-level files/directories
- * under the platform model storage root and gives iOS/Android a common
- * destination while the full Android-only model-management UI is migrated.
+ * Lightweight shared model manager. Lists first-level files/directories under
+ * the platform model storage root and lets the user pin which `.task` bundle
+ * the chat screen should boot into next time.
  */
 package com.blueedge.shared.ui.modelmanager
 
@@ -17,49 +17,83 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.blueedge.shared.domain.ModelFile
-import com.blueedge.shared.domain.ModelStorage
-import com.blueedge.shared.domain.provideModelStorage
 
 @Composable
 fun SharedModelManagerScreen(
-  storage: ModelStorage = remember { provideModelStorage() },
+  viewModel: ModelManagerViewModel,
   modifier: Modifier = Modifier,
 ) {
-  var files by remember { mutableStateOf(storage.listModelFiles()) }
-  LaunchedEffect(storage) {
-    files = storage.listModelFiles()
-  }
+  val state by viewModel.state.collectAsState()
   Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-    Text("Model storage", style = MaterialTheme.typography.titleLarge)
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Text("Model storage", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+      if (state.canImport) {
+        FilledTonalButton(
+          onClick = { viewModel.importModel() },
+          enabled = !state.isImporting && !state.isLoading,
+        ) { Text(if (state.isImporting) "Picking…" else "Import") }
+      }
+      OutlinedButton(onClick = { viewModel.refresh() }, enabled = !state.isLoading) { Text("Refresh") }
+    }
     Text(
-      storage.baseModelsDir,
+      state.baseDir,
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
       maxLines = 2,
       overflow = TextOverflow.Ellipsis,
-      modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+      modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
     )
-    if (files.isEmpty()) {
+
+    state.message?.let { msg ->
+      Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+      ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          if (state.isLoading) {
+            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.padding(8.dp))
+          }
+          Text(msg, modifier = Modifier.weight(1f).padding(8.dp))
+          TextButton(onClick = { viewModel.dismissMessage() }) { Text("OK") }
+        }
+      }
+    }
+
+    if (state.files.isEmpty()) {
       EmptyModelStorageMessage()
     } else {
       LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(files, key = { it.absolutePath }) { file -> ModelFileRow(file) }
+        items(state.files, key = { it.absolutePath }) { file ->
+          ModelFileRow(
+            file = file,
+            isActive = file.absolutePath == state.activeModelPath,
+            isBusy = state.isLoading,
+            onUse = { viewModel.useModel(file) },
+          )
+        }
       }
     }
   }
@@ -81,8 +115,18 @@ private fun EmptyModelStorageMessage() {
 }
 
 @Composable
-private fun ModelFileRow(file: ModelFile) {
-  Card(modifier = Modifier.fillMaxWidth()) {
+private fun ModelFileRow(
+  file: ModelFile,
+  isActive: Boolean,
+  isBusy: Boolean,
+  onUse: () -> Unit,
+) {
+  Card(
+    modifier = Modifier.fillMaxWidth(),
+    colors = if (isActive) {
+      CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+    } else CardDefaults.cardColors(),
+  ) {
     Row(
       modifier = Modifier.fillMaxWidth().padding(12.dp),
       verticalAlignment = Alignment.CenterVertically,
@@ -94,12 +138,20 @@ private fun ModelFileRow(file: ModelFile) {
         tint = MaterialTheme.colorScheme.primary,
       )
       Column(modifier = Modifier.weight(1f)) {
-        Text(file.name, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+        Text(file.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(
           if (file.isDirectory) "Folder" else formatBytes(file.sizeInBytes),
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+      }
+      if (isActive) {
+        Icon(Icons.Rounded.CheckCircle, contentDescription = "Active", tint = MaterialTheme.colorScheme.primary)
+      }
+      if (!file.isDirectory) {
+        FilledTonalButton(onClick = onUse, enabled = !isBusy && !isActive) {
+          Text(if (isActive) "In use" else "Use")
+        }
       }
     }
   }
@@ -119,6 +171,3 @@ private fun oneDecimal(value: Double): String {
   val raw = rounded.toString()
   return if (raw.endsWith(".0")) raw.dropLast(2) else raw
 }
-
-
-

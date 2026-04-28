@@ -33,11 +33,19 @@ private class IosMediaPipeLlmEngine : LlmEngine {
     val bridge = IosBridgeRegistry.require().llm
     bridge.generate(
       prompt = prompt,
+      temperature = config.temperature,
+      topK = config.topK,
+      topP = config.topP,
+      randomSeed = config.randomSeed,
       onToken = { token -> trySend(LlmEvent.Token(token)) },
       onError = { msg -> trySend(LlmEvent.Error(msg)); close() },
       onDone = { trySend(LlmEvent.Done); close() },
     )
-    awaitClose { /* MediaPipe handles stream lifetime via close(). */ }
+    awaitClose {
+      // Cancellation (Stop button, scope death) must tear down the
+      // MediaPipe session so it does not keep generating in the background.
+      runCatching { bridge.close() }
+    }
   }
 
   override suspend fun close() {

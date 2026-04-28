@@ -138,7 +138,35 @@ Reutilización estimada de código: 70–85 %.
   locales; `RootNavigator` lo usa en la ruta Models.
 - **Benchmark compartido base**: `SharedBenchmarkScreen` + `BenchmarkSummary`
   en `shared/commonMain/ui/benchmark/`; `RootNavigator` lo usa en la ruta
-  Benchmark. Falta conectar selección de modelo y runner nativo.
+  Benchmark.
+- **Benchmark runner real**: `BenchmarkRunner` (commonMain) consume el
+  `LlmEngine` compartido y mide prefill (time-to-first-token), decode y
+  output tokens; `BenchmarkViewModel` con `BenchmarkUiState` orquesta
+  selección de modelo, prompt y errores. La pantalla lista los modelos
+  locales (`.task`/`.tflite`/`.bin`/`.litertlm`) vía `ModelStorage.listModelFiles()`,
+  permite seleccionar/refrescar y persiste el último path en
+  `SettingsRepository.lastLoadedModelPath` (también escrito por
+  `ChatViewModel.loadModel`). Inyectado vía Koin
+  (`BenchmarkRunner` single, `BenchmarkViewModel` factory).
+- **Selección de modelo end-to-end**: `ModelManagerViewModel` con botón
+  "Use" por archivo carga el modelo en `LlmEngine` y persiste el path.
+  `ChatViewModel` hidrata el último modelo en `init` automáticamente para
+  que el chat arranque listo. Highlight visual del modelo activo +
+  Refresh manual.
+- **Consent gate**: `ConsentScreen` en `commonMain/ui/consent/` se muestra
+  como gate del `RootNavigator` mientras no estén aceptados TOS y Gemma
+  Terms (`SettingsRepository.tosAccepted` + `gemmaTermsAccepted`).
+- **Import de modelos en iOS**: `ModelImporter` (expect/actual) +
+  `BlueEdgeModelImportBridge.swift` con `UIDocumentPickerViewController`
+  que copia archivos a `Documents/models` y devuelve los paths.
+  `ModelManagerViewModel.importModel()` y botón "Import" en la pantalla
+  cuando el platform lo soporta. Android queda como no-op (los usuarios
+  pueden depositar archivos directamente en el directorio externo).
+- **Wire de `LlmGenerationConfig`** extremo-a-extremo en iOS:
+  `LlmBridgeIos.generate()` recibe `temperature/topK/topP/randomSeed` y
+  `BlueEdgeLlmBridge.swift` recrea la `LlmInference.Session` por
+  generación con esas opciones. `awaitClose { bridge.close() }` libera la
+  sesión MediaPipe cuando la coroutine se cancela (botón Stop del chat).
 - **Navegación Voyager**: `shared/commonMain/ui/navigation/RootNavigator.kt`
   con `HomeScreen`, `ChatRoute`, `ModelManagerScreen`, `BenchmarkScreen` y
   `BackScaffold`/`PlaceholderBody`. Reemplaza `GalleryNavGraph.kt`.
@@ -176,13 +204,13 @@ Reutilización estimada de código: 70–85 %.
 | `ui/common/` (Camera preview surface)            | `CameraPreviewSurface` expect/actual placeholder | ✅ parcial (preview native pendiente) |
 | `ui/llmchat/LlmChatViewModel`                     | ya cubierto por `ChatViewModel` | ✅ parcial |
 | `ui/llmchat/LlmChatScreen`                        | extender `ChatScreen` (Stop/Clear/quick-prompts ✅; imágenes pendiente) | ✅ parcial |
-| `ui/modelmanager/`                                | `SharedModelManagerScreen` + `ModelStorage.listModelFiles()` | ✅ base funcional |
-| `ui/benchmark/`                                   | `SharedBenchmarkScreen` + `BenchmarkSummary` | ✅ base funcional; runner pendiente |
+| `ui/modelmanager/`                                | `SharedModelManagerScreen` + `ModelManagerViewModel` (Use button, active highlight, Import via `ModelImporter` expect/actual + Swift `UIDocumentPickerViewController`) | ✅ funcional |
+| `ui/benchmark/`                                   | `SharedBenchmarkScreen` + `BenchmarkRunner` + `BenchmarkViewModel` (LlmEngine real, model picker, prompt, persist last model) | ✅ funcional Android (iOS al primer build con MediaPipe) |
 | `ui/navigation/GalleryNavGraph`                   | `RootNavigator.kt` (Voyager) | ✅ esqueleto |
 | `runtime/LlmModelHelper.kt` y siblings            | `AndroidSharedLlmEngine` registrado en `AndroidBridgeRegistry` | ✅ adaptador básico real |
 | `worker/DownloadWorker.kt`                        | `WorkManagerDownloadManager` + `SimpleDownloadWorker` registrado en bridge | ✅ |
 | Hilt → Koin                                       | Koin arranca junto a Hilt en `:app` | coexistencia ✅; sustitución gradual pendiente |
-| DataStore Proto → multiplatform-settings + Proto  | `SettingsRepository` ✅; importer one-shot tema ✅ + userprefs ✅ (tos, gemmaTos, hasRunTinyGarden, hasSeenBenchHelp, textInputHistory) | resto de claves pendiente |
+| DataStore Proto → multiplatform-settings + Proto  | `SettingsRepository` ✅; importer one-shot tema ✅ + userprefs ✅ (tos, gemmaTos, hasRunTinyGarden, hasSeenBenchHelp, textInputHistory) + `lastLoadedModelPath` ✅ | resto de claves pendiente |
 
 ---
 
