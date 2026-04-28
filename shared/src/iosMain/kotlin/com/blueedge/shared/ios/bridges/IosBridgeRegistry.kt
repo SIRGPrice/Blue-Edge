@@ -6,6 +6,8 @@
  */
 package com.blueedge.shared.ios.bridges
 
+import kotlin.concurrent.Volatile
+
 internal object IosBridgeRegistry {
   @Volatile var current: BlueEdgeIosBridges? = null
   fun require(): BlueEdgeIosBridges = checkNotNull(current) {
