@@ -67,12 +67,20 @@ kotlin {
       implementation(libs.multiplatform.settings)
       implementation(libs.multiplatform.settings.coroutines)
       implementation(libs.ktor.core)
+      implementation(libs.voyager.navigator)
+      implementation(libs.voyager.transitions)
+      implementation(libs.voyager.screenmodel)
+      implementation(libs.voyager.koin)
     }
 
     androidMain.dependencies {
       implementation(libs.koin.android)
       implementation(libs.ktor.okhttp)
       implementation(libs.androidx.security.crypto)
+      // Android-only Markdown rendering used by the shared `MarkdownText`
+      // expect/actual. iOS uses a `Text` fallback for now.
+      implementation(libs.commonmark)
+      implementation(libs.richtext)
       // Bridge to existing Android-only LLM runtime (litertlm, MLKit GenAI,
       // TFLite, AICore). These remain in :app for now and are wired to the
       // shared `LlmEngine` interface via `actual` providers.
