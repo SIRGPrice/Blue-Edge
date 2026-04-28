@@ -1,0 +1,191 @@
+# Continuous Integration — guarantees Android stays buildable independently
+# of the iOS porting status.
+#
+# Two parallel jobs:
+#   1. android   — compiles `:app` (the existing Android application) and
+#                  the Android target of `:shared`. Runs on every push/PR.
+#                  THIS IS THE INVARIANT: every commit must keep this green.
+#   2. ios       — compiles `:shared` for iOS (Kotlin/Native) and runs
+#                  `xcodebuild` on `iosApp`. Best-effort: failure here does
+#                  NOT block the Android pipeline.
+#
+name: BlueEdge CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:               # enables manual TestFlight builds
+
+jobs:
+
+  android:
+    name: Android — :app + :shared (assembleDebug)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
+      - name: Build Android app
+        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Build :shared for Android
+        run: ./gradlew :shared:assembleDebug --stacktrace
+
+  ios-shared:
+    name: iOS — :shared Kotlin/Native compile (best-effort)
+    runs-on: macos-14
+    continue-on-error: true        # never blocks the Android pipeline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Compile shared for iOS simulator
+        run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace
+
+  ios-app:
+    name: iOS — host app (Xcode build, best-effort)
+    runs-on: macos-14
+    needs: ios-shared
+    continue-on-error: true        # never blocks the Android pipeline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Install xcodegen + cocoapods
+        run: |
+          brew install xcodegen
+          gem install cocoapods --no-document
+      - name: Generate Xcode project
+        working-directory: iosApp
+        run: |
+          xcodegen generate
+          pod install
+      - name: Build BlueEdge.app for iOS Simulator
+        working-directory: iosApp
+        run: |
+          xcodebuild \
+            -workspace BlueEdge.xcworkspace \
+            -scheme BlueEdge \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            build CODE_SIGNING_ALLOWED=NO
+      - name: Upload Simulator .app artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlueEdge-iOS-Simulator-app
+          path: iosApp/build/Build/Products/Debug-iphonesimulator/BlueEdge.app
+          if-no-files-found: warn
+          retention-days: 14
+
+  ios-archive:
+    name: iOS — signed .ipa for TestFlight (manual trigger)
+    runs-on: macos-14
+    if: github.event_name == 'workflow_dispatch'
+    continue-on-error: true        # never blocks the Android pipeline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Install xcodegen + cocoapods
+        run: |
+          brew install xcodegen
+          gem install cocoapods --no-document
+      - name: Import signing certificate & provisioning profile
+        env:
+          BUILD_CERT_BASE64:        ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          BUILD_CERT_PASSWORD:      ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROVISIONING_PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD:        ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "$BUILD_CERT_BASE64" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -k "$KEYCHAIN_PATH" \
+            -P "$BUILD_CERT_PASSWORD" -T /usr/bin/codesign
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          echo "$PROVISIONING_PROFILE_B64" | base64 --decode \
+            > "$HOME/Library/MobileDevice/Provisioning Profiles/profile.mobileprovision"
+      - name: Generate Xcode project & install pods
+        working-directory: iosApp
+        run: |
+          xcodegen generate
+          pod install
+      - name: Archive
+        working-directory: iosApp
+        run: |
+          xcodebuild \
+            -workspace BlueEdge.xcworkspace \
+            -scheme BlueEdge \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/BlueEdge.xcarchive \
+            archive
+      - name: Export .ipa
+        working-directory: iosApp
+        run: |
+          cat > ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>          <string>app-store</string>
+            <key>teamID</key>          <string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>uploadSymbols</key>   <true/>
+            <key>signingStyle</key>    <string>manual</string>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath build/BlueEdge.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist ExportOptions.plist
+      - name: Upload .ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlueEdge-iOS-ipa
+          path: iosApp/build/ipa/*.ipa
+          retention-days: 30
+      - name: Upload to TestFlight (App Store Connect API)
+        if: ${{ secrets.APPSTORE_API_KEY_ID != '' }}
+        env:
+          API_KEY_ID:     ${{ secrets.APPSTORE_API_KEY_ID }}
+          API_ISSUER_ID:  ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          API_KEY_BASE64: ${{ secrets.APPSTORE_API_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$API_KEY_BASE64" | base64 --decode \
+            > ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8
+          xcrun altool --upload-app \
+            -f iosApp/build/ipa/*.ipa \
+            -t ios \
+            --apiKey "$API_KEY_ID" \
+            --apiIssuer "$API_ISSUER_ID"
+

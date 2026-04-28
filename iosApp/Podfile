@@ -1,0 +1,48 @@
+# Podfile for the BlueEdge iOS host app.
+#
+# Run on macOS:
+#     cd iosApp
+#     xcodegen generate
+#     pod install
+#     open BlueEdge.xcworkspace
+#
+# All pods listed here are the *official* Google / OpenID iOS replacements
+# for the Android-only dependencies used by the :app module:
+#
+#   Android (`:app`)                       →  iOS pod
+#   ─────────────────────────────────────  ─  ─────────────────────────────
+#   com.google.ai.edge.litertlm:litertlm-* →  MediaPipeTasksGenAI
+#   com.google.mlkit:genai-prompt          →  MediaPipeTasksGenAI (same runtime)
+#   play-services-tflite-*                 →  TensorFlowLiteSwift (+CoreML delegate)
+#   net.openid:appauth                     →  AppAuth
+#   androidx.exifinterface                 →  (built-in: ImageIO)
+#   pdfbox-android                         →  (built-in: PDFKit)
+#
+platform :ios, '16.0'
+use_frameworks!
+inhibit_all_warnings!
+
+target 'BlueEdge' do
+  # ── On-device LLM inference (Gemma / Phi / etc. .task bundles) ────────────
+  pod 'MediaPipeTasksGenAI',  '~> 0.10'
+  pod 'MediaPipeTasksGenAIC', '~> 0.10'
+
+  # ── Generic TFLite for benchmarks and classical-ML tasks ──────────────────
+  pod 'TensorFlowLiteSwift',         '~> 2.16'
+  pod 'TensorFlowLiteSwift/CoreML',  '~> 2.16'
+  pod 'TensorFlowLiteSwift/Metal',   '~> 2.16'
+
+  # ── HuggingFace OAuth (mirrors net.openid:appauth on Android) ─────────────
+  pod 'AppAuth', '~> 1.7'
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |t|
+    t.build_configurations.each do |c|
+      c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+      c.build_settings['ENABLE_BITCODE'] = 'NO'
+      c.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+    end
+  end
+end
+

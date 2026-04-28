@@ -47,4 +47,5 @@ dependencyResolutionManagement {
 rootProject.name = "Blue Edge"
 
 include(":app")
+include(":shared")
 include(":tools:asset-region-editor")

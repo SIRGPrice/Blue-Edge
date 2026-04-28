@@ -43,6 +43,14 @@ mlkit-genai-prompt = "1.0.0-beta2"  # Ref: https://developers.google.com/ml-kit/
 flatlaf = "3.5.4"
 pdfboxAndroid = "2.0.27.0"
 
+# --- iOS / KMP / Compose Multiplatform ---
+composeMultiplatform = "1.7.3"
+koin = "4.0.0"
+multiplatformSettings = "1.2.0"
+ktor = "2.3.12"
+kotlinxCoroutines = "1.9.0"
+kotlinxDatetime = "0.6.1"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -99,6 +107,18 @@ flatlaf = { group = "com.formdev", name = "flatlaf", version.ref = "flatlaf" }
 flatlaf-extras = { group = "com.formdev", name = "flatlaf-extras", version.ref = "flatlaf" }
 pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 
+# --- Multiplatform shared libs (Android + iOS) ---
+koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
+koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
+koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
+multiplatform-settings = { group = "com.russhwolf", name = "multiplatform-settings", version.ref = "multiplatformSettings" }
+multiplatform-settings-coroutines = { group = "com.russhwolf", name = "multiplatform-settings-coroutines", version.ref = "multiplatformSettings" }
+ktor-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -109,3 +129,5 @@ hilt-application = { id = "com.google.dagger.hilt.android", version.ref = "hilt"
 oss-licenses = {id = "com.google.android.gms.oss-licenses-plugin", version.ref = "ossLicenses"}
 google-services = { id = "com.google.gms.google-services", version.ref = "googleService" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }

@@ -1,0 +1,51 @@
+# XcodeGen spec for the BlueEdge iOS host app.
+#
+# Generate the .xcodeproj on a Mac with:
+#     brew install xcodegen
+#     cd iosApp && xcodegen generate
+#
+# This avoids committing a binary/xml-soup `.xcodeproj` from a Windows machine.
+
+name: BlueEdge
+options:
+  bundleIdPrefix: com.blueedge
+  deploymentTarget:
+    iOS: "16.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+targets:
+  BlueEdge:
+    type: application
+    platform: iOS
+    sources:
+      - path: BlueEdge
+    info:
+      path: BlueEdge/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blueedge.ios
+        FRAMEWORK_SEARCH_PATHS:
+          - $(inherited)
+          - $(SRCROOT)/../shared/build/bin/$(CONFIGURATION_iosTarget)/BlueEdgeSharedFramework
+        OTHER_LDFLAGS:
+          - $(inherited)
+          - -framework
+          - BlueEdgeShared
+    preBuildScripts:
+      - name: "Build :shared KMP framework"
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :shared:embedAndSignAppleFrameworkForXcode \
+            -Pkotlin.native.cocoapods.platform=$PLATFORM_NAME \
+            -Pkotlin.native.cocoapods.archs="$ARCHS" \
+            -Pkotlin.native.cocoapods.configuration=$CONFIGURATION
+        outputFiles:
+          - $(BUILT_PRODUCTS_DIR)/BlueEdgeShared.framework/BlueEdgeShared
+    dependencies:
+      - sdk: SwiftUI.framework
+      - sdk: UIKit.framework
+

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Minimal Info.plist for the BlueEdge iOS host app. The Xcode project that
+  references this file is generated on first checkout via `xcodegen` (see
+  iosApp/project.yml) so Windows contributors don't need a `.xcodeproj`
+  directory committed to source control.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>            <string>en</string>
+  <key>CFBundleDisplayName</key>                  <string>Blue Edge</string>
+  <key>CFBundleExecutable</key>                   <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>                   <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>        <string>6.0</string>
+  <key>CFBundleName</key>                         <string>BlueEdge</string>
+  <key>CFBundlePackageType</key>                  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>           <string>1.0.11</string>
+  <key>CFBundleVersion</key>                      <string>24</string>
+  <key>LSRequiresIPhoneOS</key>                   <true/>
+  <key>MinimumOSVersion</key>                     <string>16.0</string>
+
+  <!-- Permissions: must mirror the Android manifest's runtime requests. -->
+  <key>NSCameraUsageDescription</key>
+  <string>Blue Edge uses the camera to capture images for on-device AI prompts.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Blue Edge uses the microphone for voice prompts processed locally.</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>Blue Edge can read images from your library to use as model input.</string>
+  <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>Blue Edge can save AI-generated images to your photo library.</string>
+
+  <!-- Background download support (mirrors Android WorkManager). -->
+  <key>BGTaskSchedulerPermittedIdentifiers</key>
+  <array>
+    <string>com.blueedge.download.refresh</string>
+  </array>
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>fetch</string>
+    <string>processing</string>
+  </array>
+
+  <!-- HuggingFace OAuth callback URL scheme. Must equal the
+       `appAuthRedirectScheme` placeholder used in :app/build.gradle.kts. -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>com.blueedge.huggingface</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>blueedge-huggingface</string>
+      </array>
+    </dict>
+  </array>
+
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UILaunchScreen</key>
+  <dict/>
+</dict>
+</plist>
+
