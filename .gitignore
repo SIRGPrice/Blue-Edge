@@ -25,7 +25,39 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+**/build/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+
+# Kotlin Multiplatform / Compose Multiplatform
+.kotlin/
+kotlin-js-store/
+
+# iOS / Xcode (generated locally on macOS)
+iosApp/Pods/
+iosApp/*.xcodeproj/
+iosApp/*.xcworkspace/
+iosApp/Podfile.lock
+iosApp/build/
+xcuserdata/
+*.xcuserstate
+DerivedData/
+
+# Logs / crash dumps (developer-local, never to be pushed)
+*.log
+full.log
+tombstone.txt
+app_crash_filtered.txt
+hs_err_pid*.log
+
+# Secrets — must never be committed
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*.p8
+ExportOptions.plist
+google-services.json
+
