@@ -99,7 +99,13 @@ Reutilización estimada de código: 70–85 %.
   `AppBridges.llmEngineFactory` ya lo registra en `AndroidBridgeRegistry`.
 - **Settings importer** one-shot: en `GalleryApplication` se hidrata
   `SettingsRepository.themeMode` desde el proto-DataStore al primer
-  arranque (con `KEY_THEME_IMPORTED` como guarda).
+  arranque (con `KEY_THEME_IMPORTED` como guarda). Segundo importer
+  (`KEY_USERPREFS_IMPORTED`) hidrata `tosAccepted`, `gemmaTermsAccepted`,
+  `hasRunTinyGarden`, `hasSeenBenchmarkComparisonHelp` y `textInputHistory`.
+- **ChatScreen extendido**: botón Stop durante streaming, botón Clear
+  conversación, banner de error con Dismiss, panel de quick-prompts cuando
+  la conversación está vacía y composer deshabilitado mientras genera.
+  `ChatUiState.isGenerating` + `ChatViewModel.clearMessages()`/`dismissError()`.
 - **Composables stateless** migrados a `shared/commonMain/ui/common/`:
   `ColorUtils.kt` (con `Task` compartido), `ClickableLink.kt`, `EmptyState.kt`
   (sin `@StringRes` — usa `String`), `FloatingBanner.kt`, `ErrorDialog.kt`,
@@ -169,14 +175,14 @@ Reutilización estimada de código: 70–85 %.
 | `ui/common/` (Audio recorder/playback)           | `AudioRecorder` + `AudioPlayer` common; Android real | ✅ parcial (iOS bridges pendientes) |
 | `ui/common/` (Camera preview surface)            | `CameraPreviewSurface` expect/actual placeholder | ✅ parcial (preview native pendiente) |
 | `ui/llmchat/LlmChatViewModel`                     | ya cubierto por `ChatViewModel` | ✅ parcial |
-| `ui/llmchat/LlmChatScreen`                        | extender `ChatScreen` (imágenes, prompts) | pendiente |
+| `ui/llmchat/LlmChatScreen`                        | extender `ChatScreen` (Stop/Clear/quick-prompts ✅; imágenes pendiente) | ✅ parcial |
 | `ui/modelmanager/`                                | `SharedModelManagerScreen` + `ModelStorage.listModelFiles()` | ✅ base funcional |
 | `ui/benchmark/`                                   | `SharedBenchmarkScreen` + `BenchmarkSummary` | ✅ base funcional; runner pendiente |
 | `ui/navigation/GalleryNavGraph`                   | `RootNavigator.kt` (Voyager) | ✅ esqueleto |
 | `runtime/LlmModelHelper.kt` y siblings            | `AndroidSharedLlmEngine` registrado en `AndroidBridgeRegistry` | ✅ adaptador básico real |
 | `worker/DownloadWorker.kt`                        | `WorkManagerDownloadManager` + `SimpleDownloadWorker` registrado en bridge | ✅ |
 | Hilt → Koin                                       | Koin arranca junto a Hilt en `:app` | coexistencia ✅; sustitución gradual pendiente |
-| DataStore Proto → multiplatform-settings + Proto  | `SettingsRepository` ✅; importer one-shot del tema ✅ | resto de claves pendiente |
+| DataStore Proto → multiplatform-settings + Proto  | `SettingsRepository` ✅; importer one-shot tema ✅ + userprefs ✅ (tos, gemmaTos, hasRunTinyGarden, hasSeenBenchHelp, textInputHistory) | resto de claves pendiente |
 
 ---
 

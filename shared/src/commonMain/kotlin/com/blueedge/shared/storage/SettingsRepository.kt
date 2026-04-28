@@ -13,6 +13,8 @@ package com.blueedge.shared.storage
 import com.blueedge.shared.ui.theme.ThemeMode
 import com.russhwolf.settings.Settings
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 
 class SettingsRepository(private val settings: Settings) {
@@ -43,8 +45,41 @@ class SettingsRepository(private val settings: Settings) {
       .getOrDefault(ThemeMode.AUTO)
     set(value) { settings.putString(KEY_THEME, value.name) }
 
+  /**
+   * Most-recent first list of free-text inputs the user has typed into chat
+   * composers. Mirrors `DataStoreRepository.{save,read}TextInputHistory`.
+   */
+  var textInputHistory: List<String>
+    get() = getObject(KEY_TEXT_INPUT_HISTORY, ListSerializer(String.serializer())) ?: emptyList()
+    set(value) { putObject(KEY_TEXT_INPUT_HISTORY, ListSerializer(String.serializer()), value) }
+
+  /** Has the user accepted Blue Edge Terms of Service? */
+  var tosAccepted: Boolean
+    get() = getBoolean(KEY_TOS_ACCEPTED, default = false)
+    set(value) { putBoolean(KEY_TOS_ACCEPTED, value) }
+
+  /** Has the user accepted Gemma Terms of Use? */
+  var gemmaTermsAccepted: Boolean
+    get() = getBoolean(KEY_GEMMA_TOS_ACCEPTED, default = false)
+    set(value) { putBoolean(KEY_GEMMA_TOS_ACCEPTED, value) }
+
+  /** First-run flag for Tiny Garden onboarding screen. */
+  var hasRunTinyGarden: Boolean
+    get() = getBoolean(KEY_HAS_RUN_TINY_GARDEN, default = false)
+    set(value) { putBoolean(KEY_HAS_RUN_TINY_GARDEN, value) }
+
+  /** Help banner dismissal flag for the benchmark comparison view. */
+  var hasSeenBenchmarkComparisonHelp: Boolean
+    get() = getBoolean(KEY_HAS_SEEN_BENCH_HELP, default = false)
+    set(value) { putBoolean(KEY_HAS_SEEN_BENCH_HELP, value) }
+
   companion object {
     const val KEY_THEME = "blueedge.theme"
+    const val KEY_TEXT_INPUT_HISTORY = "blueedge.text_input_history"
+    const val KEY_TOS_ACCEPTED = "blueedge.tos_accepted"
+    const val KEY_GEMMA_TOS_ACCEPTED = "blueedge.gemma_tos_accepted"
+    const val KEY_HAS_RUN_TINY_GARDEN = "blueedge.has_run_tiny_garden"
+    const val KEY_HAS_SEEN_BENCH_HELP = "blueedge.has_seen_bench_help"
   }
 }
 

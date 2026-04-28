@@ -45,6 +45,7 @@ class GalleryApplication : Application() {
   @Inject lateinit var appLifecycleProvider: AppLifecycleProvider
 
   private val KEY_THEME_IMPORTED = "blueedge.theme.imported"
+  private val KEY_USERPREFS_IMPORTED = "blueedge.userprefs.imported"
 
   override fun onCreate() {
     super.onCreate()
@@ -125,6 +126,26 @@ class GalleryApplication : Application() {
             else -> SharedThemeMode.AUTO
           }
           settings.putBoolean(KEY_THEME_IMPORTED, true)
+        }
+        // Hydrate the rest of the lightweight DataStore-backed prefs into the
+        // shared `SettingsRepository` so the iOS UI can render them without
+        // reaching into proto. Guarded by its own flag — if the user toggles
+        // these via legacy UI later, that path also writes through to the
+        // shared repo (TODO during full Hilt→Koin cutover).
+        if (!settings.getBoolean(KEY_USERPREFS_IMPORTED, default = false)) {
+          runCatching { settings.tosAccepted = dataStoreRepository.isTosAccepted() }
+          runCatching {
+            settings.gemmaTermsAccepted = dataStoreRepository.isGemmaTermsOfUseAccepted()
+          }
+          runCatching { settings.hasRunTinyGarden = dataStoreRepository.getHasRunTinyGarden() }
+          runCatching {
+            settings.hasSeenBenchmarkComparisonHelp =
+              dataStoreRepository.getHasSeenBenchmarkComparisonHelp()
+          }
+          runCatching {
+            settings.textInputHistory = dataStoreRepository.readTextInputHistory()
+          }
+          settings.putBoolean(KEY_USERPREFS_IMPORTED, true)
         }
       }
     } catch (t: Throwable) {
