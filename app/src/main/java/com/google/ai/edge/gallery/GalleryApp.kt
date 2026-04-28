@@ -17,8 +17,16 @@
 package com.google.ai.edge.gallery
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.ai.edge.gallery.common.CrashReporter
+import com.google.ai.edge.gallery.ui.common.CrashRecoveryDialog
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import com.google.ai.edge.gallery.ui.navigation.GalleryNavHost
 
@@ -29,4 +37,23 @@ fun GalleryApp(
   modelManagerViewModel: ModelManagerViewModel,
 ) {
   GalleryNavHost(navController = navController, modelManagerViewModel = modelManagerViewModel)
+
+  // Si el arranque previo terminó en crash, mostramos un diálogo no-bloqueante con
+  // causa y pasos de resolución. Se carga en una corrutina aparte para no penalizar
+  // el primer frame.
+  val context = LocalContext.current
+  var crashReport by remember { mutableStateOf<CrashReporter.Report?>(null) }
+  LaunchedEffect(Unit) {
+    crashReport = try {
+      CrashReporter.readLast(context)
+    } catch (_: Throwable) {
+      null
+    }
+  }
+  crashReport?.let { report ->
+    CrashRecoveryDialog(report = report) {
+      crashReport = null
+      CrashReporter.clear(context)
+    }
+  }
 }

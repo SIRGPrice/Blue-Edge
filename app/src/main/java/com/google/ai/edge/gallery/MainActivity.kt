@@ -69,21 +69,33 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
 
     // Debug: Dump all intent extras to see what FCM unloads
-    intent.extras?.let { extras ->
-      for (key in extras.keySet()) {
-        Log.d(TAG, "onCreate Extra -> Key: $key, Value: ${extras.get(key)}")
+    try {
+      intent.extras?.let { extras ->
+        for (key in extras.keySet()) {
+          Log.d(TAG, "onCreate Extra -> Key: $key, Value: ${extras.get(key)}")
+        }
       }
+    } catch (t: Throwable) {
+      Log.w(TAG, "Failed to dump intent extras", t)
     }
 
     // Convert FCM Console data extras to intent data for GalleryNavGraph to pick up
-    intent.getStringExtra("deeplink")?.let { link ->
-      Log.d(TAG, "onCreate: Found deeplink extra: $link")
-      if (link.startsWith("http://") || link.startsWith("https://")) {
-        val browserIntent = Intent(Intent.ACTION_VIEW, link.toUri())
-        startActivity(browserIntent)
-      } else {
-        intent.data = link.toUri()
+    try {
+      intent.getStringExtra("deeplink")?.let { link ->
+        Log.d(TAG, "onCreate: Found deeplink extra: $link")
+        if (link.startsWith("http://") || link.startsWith("https://")) {
+          val browserIntent = Intent(Intent.ACTION_VIEW, link.toUri())
+          try {
+            startActivity(browserIntent)
+          } catch (t: Throwable) {
+            Log.w(TAG, "No activity available to handle deeplink: $link", t)
+          }
+        } else {
+          intent.data = link.toUri()
+        }
       }
+    } catch (t: Throwable) {
+      Log.w(TAG, "Failed to handle deeplink extra", t)
     }
 
     fun setContent() {
@@ -120,7 +132,14 @@ class MainActivity : ComponentActivity() {
       contentSet = true
     }
 
-    modelManagerViewModel.loadModelAllowlist()
+    try {
+      modelManagerViewModel.loadModelAllowlist()
+    } catch (t: Throwable) {
+      Log.e(TAG, "loadModelAllowlist failed at startup", t)
+      com.google.ai.edge.gallery.common.CrashReporter.persist(
+        applicationContext, Thread.currentThread(), t,
+      )
+    }
 
     // Show splash screen.
     val splashScreen = installSplashScreen()
@@ -185,20 +204,32 @@ class MainActivity : ComponentActivity() {
     setIntent(intent)
 
     // Debug: Dump all intent extras to see what FCM unloads
-    intent.extras?.let { extras ->
-      for (key in extras.keySet()) {
-        Log.d(TAG, "onNewIntent Extra -> Key: $key, Value: ${extras.get(key)}")
+    try {
+      intent.extras?.let { extras ->
+        for (key in extras.keySet()) {
+          Log.d(TAG, "onNewIntent Extra -> Key: $key, Value: ${extras.get(key)}")
+        }
       }
+    } catch (t: Throwable) {
+      Log.w(TAG, "Failed to dump onNewIntent extras", t)
     }
 
-    intent.getStringExtra("deeplink")?.let { link ->
-      Log.d(TAG, "onNewIntent: Found deeplink extra: $link")
-      if (link.startsWith("http://") || link.startsWith("https://")) {
-        val browserIntent = Intent(Intent.ACTION_VIEW, link.toUri())
-        startActivity(browserIntent)
-      } else {
-        intent.data = link.toUri()
+    try {
+      intent.getStringExtra("deeplink")?.let { link ->
+        Log.d(TAG, "onNewIntent: Found deeplink extra: $link")
+        if (link.startsWith("http://") || link.startsWith("https://")) {
+          val browserIntent = Intent(Intent.ACTION_VIEW, link.toUri())
+          try {
+            startActivity(browserIntent)
+          } catch (t: Throwable) {
+            Log.w(TAG, "No activity available to handle deeplink: $link", t)
+          }
+        } else {
+          intent.data = link.toUri()
+        }
       }
+    } catch (t: Throwable) {
+      Log.w(TAG, "Failed to handle onNewIntent deeplink", t)
     }
   }
 

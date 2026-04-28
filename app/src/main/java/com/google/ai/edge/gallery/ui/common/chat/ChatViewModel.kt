@@ -53,6 +53,10 @@ abstract class ChatViewModel() : ViewModel() {
   val uiState = _uiState.asStateFlow()
 
   fun addMessage(model: Model, message: ChatMessage) {
+    Log.i(
+      "BlueEdgePerf",
+      "ChatVM.addMessage model=${model.name} type=${message.type} side=${message.side}",
+    )
     val newMessagesByModel = _uiState.value.messagesByModel.toMutableMap()
     val newMessages = newMessagesByModel[model.name]?.toMutableList() ?: mutableListOf()
     newMessagesByModel[model.name] = newMessages
@@ -86,6 +90,24 @@ abstract class ChatViewModel() : ViewModel() {
         newMessages.removeAt(index)
       }
     }
+    _uiState.update { _uiState.value.copy(messagesByModel = newMessagesByModel) }
+  }
+
+  /**
+   * Removes all messages at and after [fromIndex] for the given model.
+   * Used by the inline edit / delete actions on chat bubbles, where
+   * removing a user prompt also discards its response (and any thinking /
+   * loading messages that may follow it).
+   */
+  fun removeMessagesFromIndex(model: Model, fromIndex: Int) {
+    val newMessagesByModel = _uiState.value.messagesByModel.toMutableMap()
+    val newMessages = newMessagesByModel[model.name]?.toMutableList() ?: mutableListOf()
+    if (fromIndex in 0 until newMessages.size) {
+      while (newMessages.size > fromIndex) {
+        newMessages.removeAt(newMessages.size - 1)
+      }
+    }
+    newMessagesByModel[model.name] = newMessages
     _uiState.update { _uiState.value.copy(messagesByModel = newMessagesByModel) }
   }
 
@@ -339,14 +361,17 @@ abstract class ChatViewModel() : ViewModel() {
   }
 
   fun setInProgress(inProgress: Boolean) {
+    Log.i("BlueEdgePerf", "ChatVM.setInProgress=$inProgress")
     _uiState.update { _uiState.value.copy(inProgress = inProgress) }
   }
 
   fun setIsResettingSession(isResettingSession: Boolean) {
+    Log.i("BlueEdgePerf", "ChatVM.setIsResettingSession=$isResettingSession")
     _uiState.update { _uiState.value.copy(isResettingSession = isResettingSession) }
   }
 
   fun setPreparing(preparing: Boolean) {
+    Log.i("BlueEdgePerf", "ChatVM.setPreparing=$preparing")
     _uiState.update { _uiState.value.copy(preparing = preparing) }
   }
 

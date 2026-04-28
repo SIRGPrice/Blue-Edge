@@ -9,13 +9,13 @@ package com.google.ai.edge.gallery.customtasks.stocatstic.ui.assets
 
 object PathCatalogGen {
   val ENTRIES: List<GalleryEntry> = listOf(
+    GalleryEntry(id = "stones1", label = "Piedra", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 4, row = 11, colSpan = 1, rowSpan = 1),
     GalleryEntry(id = "flowers", label = "Pétalos", assetPath = "stocatstic/Tilesets/Tileset_Floor_Detail.png", col = 3, row = 1, colSpan = 1, rowSpan = 1),
     GalleryEntry(id = "dirt", label = "Tierra", assetPath = "stocatstic/Tilesets/Tileset_Floor_Detail.png", col = 1, row = 5, colSpan = 1, rowSpan = 1),
     GalleryEntry(id = "sand", label = "Arena", assetPath = "stocatstic/Tilesets/Tileset_Floor_Detail.png", col = 2, row = 5, colSpan = 1, rowSpan = 1),
     GalleryEntry(id = "leaves", label = "Hojas", assetPath = "stocatstic/Tilesets/Tileset_Floor_Detail.png", col = 7, row = 5, colSpan = 1, rowSpan = 1),
     GalleryEntry(id = "stones", label = "Piedras", assetPath = "stocatstic/Tilesets/Tileset_Floor_Detail.png", col = 8, row = 5, colSpan = 1, rowSpan = 1),
     GalleryEntry(id = "crop_row", label = "Surco", assetPath = "stocatstic/Tilesets/Tileset_Floor_Detail.png", col = 3, row = 6, colSpan = 1, rowSpan = 1),
-    GalleryEntry(id = "stones1", label = "Piedra", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 4, row = 11, colSpan = 1, rowSpan = 1),
   )
 }
 
@@ -34,7 +34,7 @@ object RootCatalogGen {
 
 object TaskSpriteCatalogGen {
   val ENTRIES: List<GalleryEntry> = listOf(
-    GalleryEntry(id = "camp_00", label = "Hoguera", assetPath = "stocatstic/Object Animation/Campfire.png", col = 0, row = 0, colSpan = 7, rowSpan = 2, assetType = AssetType.SOLID),
+    GalleryEntry(id = "camp_00", label = "Hoguera", assetPath = "stocatstic/Object Animation/Campfire.png", col = 6, row = 1, colSpan = 1, rowSpan = 1, assetType = AssetType.SOLID),
     GalleryEntry(id = "hs_04", label = "Cofre", assetPath = "stocatstic/Object Animation/Chest.png", col = 0, row = 7, colSpan = 1, rowSpan = 1, assetType = AssetType.NORMAL),
     GalleryEntry(id = "bn_00", label = "Heno", assetPath = "stocatstic/Tilesets/Barn_Tileset.png", col = 28, row = 2, colSpan = 2, rowSpan = 1, assetType = AssetType.PLANT),
     GalleryEntry(id = "sheeps", label = "Obejas", assetPath = "stocatstic/Tilesets/Barn_Tileset.png", col = 23, row = 5, colSpan = 1, rowSpan = 1, assetType = AssetType.NORMAL),
@@ -100,11 +100,11 @@ object TaskSpriteCatalogGen {
     GalleryEntry(id = "nat_02", label = "Mata", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 6, row = 1, colSpan = 1, rowSpan = 1, assetType = AssetType.SOLID),
     GalleryEntry(id = "nat_06", label = "Rocas", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 13, row = 1, colSpan = 2, rowSpan = 2, assetType = AssetType.SOLID),
     GalleryEntry(id = "nat_05", label = "Tocón", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 1, row = 6, colSpan = 2, rowSpan = 2, assetType = AssetType.SOLID),
+    GalleryEntry(id = "structur1", label = "Troncos+", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 3, row = 7, colSpan = 2, rowSpan = 1),
+    GalleryEntry(id = "structure", label = "Troncos", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 3, row = 7, colSpan = 1, rowSpan = 1, assetType = AssetType.SOLID),
     GalleryEntry(id = "nat_04", label = "Tronco", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 6, row = 8, colSpan = 2, rowSpan = 1, assetType = AssetType.SOLID),
     GalleryEntry(id = "crop_15", label = "Setas", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 12, row = 11, colSpan = 1, rowSpan = 1, assetType = AssetType.SOLID),
     GalleryEntry(id = "nat_07", label = "Flor silvestre", assetPath = "stocatstic/Tilesets/Tileset_Floor_Detail.png", col = 2, row = 2, colSpan = 1, rowSpan = 1, assetType = AssetType.PLANT),
-    GalleryEntry(id = "structure", label = "Troncos", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 3, row = 7, colSpan = 1, rowSpan = 1, assetType = AssetType.SOLID),
-    GalleryEntry(id = "structur1", label = "Troncos+", assetPath = "stocatstic/Tilesets/Nature_Tileset.png", col = 3, row = 7, colSpan = 2, rowSpan = 1),
   )
 }
 

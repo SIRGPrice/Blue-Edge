@@ -957,37 +957,48 @@ fun InfiniteSceneScreen(
       )
     }
 
-    // ---------- FLOATING MENU ICON COLUMN (top-left, over the scene, no background) ----------
-    // Replaces the removed global top app bar: back, gallery, history stacked vertically with
-    // identical styling — bare icons on top of the pixel scene, no container or tint surface.
-    Column(
+    // ---------- FLOATING MENU ICON COLUMN (top-left, over the scene) ----------
+    // Replaces the removed global top app bar: back, gallery, history stacked vertically
+    // inside a single rounded surface that matches the rest of the stoCATstic UI
+    // (CellActionBar / ActionChip / InspectorSheet all use the same deepSky surface
+    // with white iconography and 18 dp rounded corners).
+    Surface(
       modifier = Modifier
         .align(Alignment.TopStart)
-        .padding(start = 4.dp, top = 0.dp),
-      verticalArrangement = Arrangement.spacedBy(2.dp),
+        .padding(start = 8.dp, top = 8.dp),
+      shape = RoundedCornerShape(18.dp),
+      color = PixelPalette.deepSky.copy(alpha = 0.92f),
+      tonalElevation = 6.dp,
+      shadowElevation = 8.dp,
     ) {
-      androidx.compose.material3.IconButton(onClick = onNavigateUp) {
-        Icon(
-          Icons.Outlined.ArrowBack,
-          contentDescription = "Volver",
-          tint = TopBarBackTint,
-        )
-      }
-      androidx.compose.material3.IconButton(
-        onClick = { onboardingMode = false; galleryOpen = true },
+      Column(
+        modifier = Modifier.padding(vertical = 4.dp, horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
       ) {
-        Icon(
-          Icons.Outlined.Collections,
-          contentDescription = "Abrir galería de assets",
-          tint = TopBarGalleryTint,
-        )
-      }
-      androidx.compose.material3.IconButton(onClick = { historyOpen = true }) {
-        Icon(
-          Icons.Outlined.Notifications,
-          contentDescription = "Historial de acciones",
-          tint = TopBarHistoryTint,
-        )
+        IconButton(onClick = onNavigateUp) {
+          Icon(
+            Icons.Outlined.ArrowBack,
+            contentDescription = "Volver",
+            tint = PixelPalette.onDark,
+          )
+        }
+        IconButton(
+          onClick = { onboardingMode = false; galleryOpen = true },
+        ) {
+          Icon(
+            Icons.Outlined.Collections,
+            contentDescription = "Abrir galería de assets",
+            tint = PixelPalette.onDark,
+          )
+        }
+        IconButton(onClick = { historyOpen = true }) {
+          Icon(
+            Icons.Outlined.Notifications,
+            contentDescription = "Historial de acciones",
+            tint = PixelPalette.onDark,
+          )
+        }
       }
     }
     if (historyOpen) {
