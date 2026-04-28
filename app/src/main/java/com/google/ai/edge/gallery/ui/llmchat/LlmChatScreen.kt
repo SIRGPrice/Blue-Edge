@@ -204,8 +204,8 @@ fun ChatViewWrapper(
   val task = modelManagerViewModel.getTaskById(id = taskId)!!
   val allowThinking = task.allowThinking()
 
-  // Coroutine scope used to run the RAG augmentation (SQLite/IO) right before firing
-  // `generateResponse`. The RAG coordinator lives on the shared ModelManagerViewModel.
+  // Coroutine scope used to run the attachment text concatenation right before firing
+  // `generateResponse`. The coordinator lives on the shared ModelManagerViewModel.
   val ragScope = androidx.compose.runtime.rememberCoroutineScope()
   val ragCoordinator = modelManagerViewModel.chatAttachments
 
@@ -214,6 +214,10 @@ fun ChatViewWrapper(
     viewModel = viewModel,
     modelManagerViewModel = modelManagerViewModel,
     onSendMessage = { model, messages ->
+      android.util.Log.i(
+        "BlueEdgePerf",
+        "ChatViewWrapper.onSendMessage model=${model.name} count=${messages.size} types=${messages.map { it.type }}",
+      )
       for (message in messages) {
         viewModel.addMessage(model = model, message = message)
       }
@@ -242,18 +246,28 @@ fun ChatViewWrapper(
           modelManagerViewModel.addTextInputHistory(text)
         }
         // Consume any staged document attachments / memory flag, augmenting the prompt
-        // with retrieved RAG context BEFORE handing it off to the model. If nothing was
-        // staged, the original text flows through unchanged.
+        // with the full text of those documents BEFORE handing it off to the model. If
+        // nothing was staged, the original text flows through unchanged.
         ragScope.launch {
+          val tSendPressed = System.currentTimeMillis()
+          android.util.Log.i(
+            "BlueEdgePerf",
+            "SEND pressed model=${model.name} textChars=${text.length} images=${images.size} audios=${audioMessages.size}",
+          )
           val finalText = try {
             ragCoordinator.augmentPromptForSend(
               conversationKey = model.name,
               userPrompt = text,
             ).augmentedPrompt
           } catch (t: Throwable) {
-            android.util.Log.e(TAG, "RAG augmentation failed; falling back to raw prompt", t)
+            android.util.Log.e(TAG, "Attachment augmentation failed; falling back to raw prompt", t)
             text
           }
+          val tAfterAugment = System.currentTimeMillis()
+          android.util.Log.i(
+            "BlueEdgePerf",
+            "Attachment augment done in ${tAfterAugment - tSendPressed} ms; finalChars=${finalText.length} (delta=${finalText.length - text.length})",
+          )
           viewModel.generateResponse(
             model = model,
             input = finalText,

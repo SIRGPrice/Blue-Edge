@@ -62,12 +62,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.ai.edge.gallery.R
-import com.google.ai.edge.gallery.data.BuiltInTaskId
-import com.google.ai.edge.gallery.data.ConfigKeys
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.ModelDownloadStatusType
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.ui.common.ModelPageAppBar
+import com.google.ai.edge.gallery.ui.common.chat.rag.PersistentDocumentsSheet
 import com.google.ai.edge.gallery.ui.modelmanager.ModelInitializationStatusType
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import kotlinx.coroutines.Dispatchers
@@ -126,6 +125,14 @@ fun ChatView(
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
 
+  // The top-bar "App Settings" slot is repurposed app-wide to a
+  // "Persistent documents" sheet (cards_stack icon). The button is shown for
+  // every chat that uses ChatView, and clicking it always opens the sheet —
+  // callers don't have to wire anything up.
+  var showPersistentDocsSheet by remember { mutableStateOf(false) }
+  val effectiveOnAppSettingsClicked: () -> Unit = { showPersistentDocsSheet = true }
+  val effectiveShowAppSettingsButton = true
+
   // Initialize model when model/download state changes.
   val curDownloadStatus = modelManagerUiState.modelDownloadStatus[selectedModel.name]
   val modelInitStatus = modelManagerUiState.modelInitializationStatus[selectedModel.name]
@@ -162,8 +169,8 @@ fun ChatView(
         showSkillButton = false,
         onTinyGardenClicked = onTinyGardenClicked,
         showTinyGardenButton = showTinyGardenButton,
-        onAppSettingsClicked = onAppSettingsClicked,
-        showAppSettingsButton = showAppSettingsButton,
+        onAppSettingsClicked = effectiveOnAppSettingsClicked,
+        showAppSettingsButton = effectiveShowAppSettingsButton,
         onModelSelected = { prevModel, curModel ->
           if (prevModel.name != curModel.name) {
             modelManagerViewModel.cleanupModel(context = context, task = task, model = prevModel)
@@ -275,6 +282,21 @@ fun ChatView(
             )
           }
         }
+      }
+
+      if (showPersistentDocsSheet) {
+        PersistentDocumentsSheet(
+          store = modelManagerViewModel.chatAttachments.permanentStore,
+          onDismiss = { showPersistentDocsSheet = false },
+          onAttachClicked = { ref ->
+            scope.launch {
+              modelManagerViewModel.chatAttachments.emitPermanentAttach(ref)
+            }
+          },
+          onAddDocuments = { newDocs ->
+            modelManagerViewModel.chatAttachments.preIngest(newDocs)
+          },
+        )
       }
     }
   }

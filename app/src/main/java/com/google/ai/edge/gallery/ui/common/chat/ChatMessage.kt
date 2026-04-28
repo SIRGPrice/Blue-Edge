@@ -259,6 +259,7 @@ class ChatMessageComposite(
   val bitmaps: List<Bitmap> = listOf(),
   val imageBitMaps: List<ImageBitmap> = listOf(),
   val audioClips: List<ChatMessageAudioClip> = listOf(),
+  val documents: List<AttachedDocumentInfo> = listOf(),
   override val side: ChatSide,
   override val latencyMs: Float = 0f,
   override val accelerator: String = "",
@@ -277,6 +278,7 @@ class ChatMessageComposite(
       bitmaps = bitmaps.toList(),
       imageBitMaps = imageBitMaps.toList(),
       audioClips = audioClips.toList(),
+      documents = documents.toList(),
       side = side,
       latencyMs = latencyMs,
       accelerator = accelerator,
@@ -284,6 +286,22 @@ class ChatMessageComposite(
     )
   }
 }
+
+/**
+ * Lightweight descriptor of a document attachment that travels with the chat message
+ * so the UI can render a chip (with realistic processing progress) right below the
+ * user's bubble — exactly like images and audio attachments do.
+ *
+ * Note: we DO NOT carry the file bytes; the heavy work (extraction / chunking / RAG
+ * ingest) is handled by [com.google.ai.edge.gallery.ui.common.chat.rag.ChatAttachmentsCoordinator].
+ * The [uriKey] (i.e. `uri.toString()`) is the key used to look up the live indexing
+ * state and progress flows on that coordinator.
+ */
+data class AttachedDocumentInfo(
+  val uriKey: String,
+  val displayName: String,
+  val isPersistent: Boolean,
+)
 
 /** Chat message for images with history. */
 class ChatMessageImageWithHistory(

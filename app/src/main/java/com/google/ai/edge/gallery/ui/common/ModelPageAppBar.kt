@@ -47,10 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.customtasks.common.CustomTaskTopBarAction
@@ -103,8 +100,6 @@ fun ModelPageAppBar(
     modelInitializationStatus?.status == ModelInitializationStatusType.INITIALIZING
   val isModelInitialized =
     modelInitializationStatus?.status == ModelInitializationStatusType.INITIALIZED
-  val isStoCATstic = task.id == BuiltInTaskId.LLM_TINY_GARDEN
-  val stoCATsticContentColor = Color.White
 
   CenterAlignedTopAppBar(
     title = {
@@ -117,32 +112,19 @@ fun ModelPageAppBar(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-          if (isStoCATstic) {
-            val goldenGradient = Brush.linearGradient(colors = listOf(Color(0xFFFFD700), Color(0xFFFFA500)))
-            val blueGradient = Brush.linearGradient(colors = listOf(Color(0xFF85B1F8), Color(0xFF3174F1)))
-            Text(
-              buildAnnotatedString {
-                withStyle(SpanStyle(brush = blueGradient)) { append("Sto") }
-                withStyle(SpanStyle(brush = goldenGradient)) { append("CAT") }
-                withStyle(SpanStyle(brush = blueGradient)) { append("stic Assistant") }
-              },
-              style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
-            )
-          } else {
-            Icon(
-              painter = painterResource(R.drawable.view_in_ar_24px),
-              modifier = Modifier.size(20.dp),
-              contentDescription = null,
-              tint = Color.Unspecified,
-            )
-            Text(
-              stringResource(R.string.app_name),
-              style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Medium,
-                brush = Brush.linearGradient(colors = listOf(Color(0xFF85B1F8), Color(0xFF3174F1))),
-              ),
-            )
-          }
+          Icon(
+            painter = painterResource(R.drawable.view_in_ar_24px),
+            modifier = Modifier.size(20.dp),
+            contentDescription = null,
+            tint = Color.Unspecified,
+          )
+          Text(
+            stringResource(R.string.app_name),
+            style = MaterialTheme.typography.titleMedium.copy(
+              fontWeight = FontWeight.Medium,
+              brush = Brush.linearGradient(colors = listOf(Color(0xFF85B1F8), Color(0xFF3174F1))),
+            ),
+          )
         }
 
         // Model chips pager.
@@ -159,18 +141,7 @@ fun ModelPageAppBar(
       }
     },
     modifier = modifier,
-    colors =
-      if (isStoCATstic) {
-        TopAppBarDefaults.centerAlignedTopAppBarColors(
-          containerColor = Color.Transparent,
-          scrolledContainerColor = Color.Transparent,
-          navigationIconContentColor = stoCATsticContentColor,
-          actionIconContentColor = stoCATsticContentColor,
-          titleContentColor = stoCATsticContentColor,
-        )
-      } else {
-        TopAppBarDefaults.centerAlignedTopAppBarColors()
-      },
+    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(),
     // Left side: Game and App Settings buttons (hidden when model not downloaded).
     navigationIcon = {
       val downloadSucceeded = curDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED
@@ -187,7 +158,7 @@ fun ModelPageAppBar(
               imageVector = action.icon,
               contentDescription = action.contentDescription,
               modifier = Modifier.size(iconSize),
-              tint = if (isStoCATstic) stoCATsticContentColor else LocalContentColor.current,
+              tint = LocalContentColor.current,
             )
           }
         }
@@ -199,7 +170,7 @@ fun ModelPageAppBar(
               painter = painterResource(R.drawable.graph_1_24px),
               contentDescription = "StoCATstic Assistant",
               modifier = Modifier.size(iconSize),
-              tint = Color.Unspecified,
+              tint = LocalContentColor.current,
             )
           }
         }
@@ -208,10 +179,10 @@ fun ModelPageAppBar(
           IconButton(onClick = onAppSettingsClicked, enabled = enableButton,
             modifier = Modifier.alpha(if (enableButton) 1f else 0.5f)) {
             Icon(
-              painter = painterResource(R.drawable.settings_24px),
-              contentDescription = "App Settings",
+              painter = painterResource(R.drawable.cards_stack_24px),
+              contentDescription = "Documentos permanentes",
               modifier = Modifier.size(iconSize),
-              tint = Color.Unspecified,
+              tint = LocalContentColor.current,
             )
           }
         }
@@ -235,7 +206,7 @@ fun ModelPageAppBar(
             imageVector = Icons.Outlined.Tune,
             contentDescription = stringResource(R.string.cd_model_settings_icon),
             modifier = Modifier.size(iconSize),
-              tint = if (isStoCATstic) stoCATsticContentColor else LocalContentColor.current,
+            tint = LocalContentColor.current,
           )
         }
       }
@@ -260,6 +231,7 @@ fun ModelPageAppBar(
               imageVector = Icons.Outlined.MapsUgc,
               contentDescription = stringResource(R.string.cd_reset_session_icon),
               modifier = Modifier.size(iconSize),
+              tint = LocalContentColor.current,
             )
           }
         }

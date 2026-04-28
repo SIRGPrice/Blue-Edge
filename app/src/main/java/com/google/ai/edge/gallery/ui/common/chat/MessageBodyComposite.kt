@@ -60,6 +60,19 @@ fun MessageBodyComposite(message: ChatMessageComposite) {
         }
       }
     }
+
+    // Document chips (carry their own progress indicator while being processed).
+    if (message.documents.isNotEmpty()) {
+      FlowRow(
+        modifier = Modifier.padding(top = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+      ) {
+        for (doc in message.documents) {
+          MessageDocumentChip(doc = doc)
+        }
+      }
+    }
   }
 }
 

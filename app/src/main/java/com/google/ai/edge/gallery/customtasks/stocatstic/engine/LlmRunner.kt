@@ -12,8 +12,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Abstracts LLM generation so capabilities don't depend on litert-lm directly. */
 interface LlmRunner {
@@ -43,6 +47,13 @@ interface LlmRunner {
 class ActiveModelLlmRunner @Inject constructor(
   private val lifecycleManager: ModelLifecycleManager,
 ) : LlmRunner {
+  /**
+   * Scope persistente para que el watchdog interno de [LlmChatModelHelper.runInference] tenga
+   * dónde ejecutarse. Si pasáramos `coroutineScope = null` el watchdog quedaría desactivado y
+   * cualquier atasco en prefill o decode dejaría el flujo IA colgado para siempre.
+   */
+  private val runnerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
   @Volatile var activeModel: Model? = null
     set(value) {
       field = value
@@ -62,18 +73,28 @@ class ActiveModelLlmRunner @Inject constructor(
     return lifecycleManager.generationMutex.withLock {
       suspendCancellableCoroutine { cont ->
         val sb = StringBuilder()
+        // `resumed` evita que un done=true seguido de un onError (o viceversa) intente
+        // reanudar la coroutine dos veces (IllegalStateException).
+        val resumed = AtomicBoolean(false)
         LlmChatModelHelper.runInference(
           model = model,
           input = prompt,
           resultListener = { partial, done, _ ->
             sb.append(partial)
-            if (done && cont.isActive) cont.resume(sb.toString().trim())
+            if (done && resumed.compareAndSet(false, true) && cont.isActive) {
+              cont.resume(sb.toString().trim())
+            }
           },
           cleanUpListener = { },
-          onError = { msg -> if (cont.isActive) cont.resumeWithException(RuntimeException(msg)) },
+          onError = { msg ->
+            if (resumed.compareAndSet(false, true) && cont.isActive) {
+              cont.resumeWithException(RuntimeException(msg))
+            }
+          },
           images = images,
           audioClips = audioClips,
-          coroutineScope = null,
+          // IMPRESCINDIBLE: sin scope no hay watchdog y la inferencia podría no terminar nunca.
+          coroutineScope = runnerScope,
           extraContext = null,
         )
       }

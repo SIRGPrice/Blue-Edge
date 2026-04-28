@@ -18,6 +18,8 @@ package com.google.ai.edge.gallery.ui.common.chat
 
 import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
@@ -48,13 +50,21 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
@@ -73,6 +83,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -87,21 +98,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.BuiltInTaskId
+import com.google.ai.edge.gallery.data.ConfigKeys
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.ui.common.AudioAnimation
 import com.google.ai.edge.gallery.ui.common.ErrorDialog
 import com.google.ai.edge.gallery.ui.common.FloatingBanner
 import com.google.ai.edge.gallery.ui.common.RotationalLoader
+import com.google.ai.edge.gallery.ui.common.chat.rag.LocalChatAttachments
 import com.google.ai.edge.gallery.ui.modelmanager.ModelInitializationStatusType
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import com.google.ai.edge.gallery.ui.theme.customColors
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 
 /** Composable function for the main chat panel, displaying messages and handling user input. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChatPanel(
   modelManagerViewModel: ModelManagerViewModel,
@@ -130,6 +141,12 @@ fun ChatPanel(
   val modelManagerUiState by modelManagerViewModel.uiState.collectAsState()
   val messages = uiState.messagesByModel[selectedModel.name] ?: listOf()
   val streamingMessage = uiState.streamingMessagesByModel[selectedModel.name]
+  androidx.compose.runtime.SideEffect {
+    android.util.Log.v(
+      "BlueEdgePerf",
+      "ChatPanel recompose model=${selectedModel.name} messages=${messages.size} inProgress=${uiState.inProgress} preparing=${uiState.preparing}",
+    )
+  }
   val snackbarHostState = remember { SnackbarHostState() }
   val scope = rememberCoroutineScope()
   val haptic = LocalHapticFeedback.current
@@ -179,6 +196,10 @@ fun ChatPanel(
   var showImageLimitBanner by remember { mutableStateOf(false) }
   var isConversationMode by remember { mutableStateOf(false) }
   var isTtsSpeaking by remember { mutableStateOf(false) }
+
+  // Index of the message whose long-press action menu (edit / delete) is open.
+  // -1 means no menu is currently open.
+  var actionMenuMessageIndex by remember { mutableIntStateOf(-1) }
   var wasThinkingEnabledBeforeConversation by remember { mutableStateOf(false) }
 
   val conversationTts = remember {
@@ -281,6 +302,9 @@ fun ChatPanel(
   }
 
   Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+    CompositionLocalProvider(
+      LocalChatAttachments provides modelManagerViewModel.chatAttachments,
+    ) {
     // Audio record animation - show during hold-to-talk AND conversation mode recording.
     AnimatedVisibility(
       showAudioRecorder || isConversationMode,
@@ -420,6 +444,32 @@ fun ChatPanel(
                     }
                     messageBubbleModifier = messageBubbleModifier.background(backgroundColor)
                   }
+                  // Long-press support: enabled for normal text bubbles and for
+                  // composite prompt bubbles (text + docs/images/audio). Prompts con
+                  // documentos se renderizan como ChatMessageComposite, por eso antes
+                  // algunos mensajes sí dejaban editar/borrar y otros no.
+                  val editablePromptText = when (message) {
+                    is ChatMessageText -> message.content
+                    is ChatMessageComposite -> message.content
+                    else -> null
+                  }
+                  val isUserPromptThread =
+                    message.side == ChatSide.USER && editablePromptText != null
+                  val supportsActionMenu =
+                    (message is ChatMessageText || message is ChatMessageComposite) &&
+                      (message.side == ChatSide.USER || message.side == ChatSide.AGENT) &&
+                      !uiState.inProgress
+                  if (supportsActionMenu) {
+                    messageBubbleModifier = messageBubbleModifier.combinedClickable(
+                      onClick = {},
+                      onLongClick = {
+                        haptic.performHapticFeedback(
+                          androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress
+                        )
+                        actionMenuMessageIndex = index
+                      },
+                    )
+                  }
                   Box(modifier = messageBubbleModifier) {
                     when (message) {
                       // Text
@@ -477,6 +527,58 @@ fun ChatPanel(
                         )
 
                       else -> {}
+                    }
+                  }
+
+                  // Long-press action menu (delete + edit) anchored to the
+                  // message bubble. Edit is only meaningful for the user's own
+                  // text prompts; for agent replies only delete is shown.
+                  if (supportsActionMenu && actionMenuMessageIndex == index) {
+                    DropdownMenu(
+                      expanded = true,
+                      onDismissRequest = { actionMenuMessageIndex = -1 },
+                    ) {
+                      if (isUserPromptThread) {
+                        DropdownMenuItem(
+                          leadingIcon = {
+                            Icon(Icons.Rounded.Edit, contentDescription = null)
+                          },
+                          text = { Text(stringResource(R.string.action_edit_message)) },
+                          onClick = {
+                            // Inline edit: pull the prompt back into the text
+                            // field and drop the prompt + its response from the
+                            // chat history so the next send replaces them.
+                            curMessage = editablePromptText.orEmpty()
+                            actionMenuMessageIndex = -1
+                            viewModel.removeMessagesFromIndex(
+                              model = selectedModel,
+                              fromIndex = index,
+                            )
+                          },
+                        )
+                      }
+                      DropdownMenuItem(
+                        leadingIcon = {
+                          Icon(
+                            Icons.Rounded.Delete,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                          )
+                        },
+                        text = { Text(stringResource(R.string.action_delete_message)) },
+                        onClick = {
+                          actionMenuMessageIndex = -1
+                          if (isUserPromptThread) {
+                            // Remove the prompt and everything after it (its reply chain).
+                            viewModel.removeMessagesFromIndex(
+                              model = selectedModel,
+                              fromIndex = index,
+                            )
+                          } else {
+                            viewModel.removeMessageAt(model = selectedModel, index = index)
+                          }
+                        },
+                      )
                     }
                   }
 
@@ -600,6 +702,15 @@ fun ChatPanel(
           },
         )
       } else {
+        GenerationProgressBar(
+          inProgress = uiState.inProgress,
+          preparing = uiState.preparing,
+          messages = messages,
+          maxTokens = selectedModel.getIntConfigValue(
+            key = ConfigKeys.MAX_TOKENS,
+            defaultValue = 1024,
+          ),
+        )
         MessageInputText(
         task = task,
         modelManagerViewModel = modelManagerViewModel,
@@ -660,6 +771,7 @@ fun ChatPanel(
         )
       } // end conversation mode else
     }
+    } // end CompositionLocalProvider
   }
 
   // Error dialog.
@@ -690,5 +802,147 @@ private suspend fun scrollToBottom(listState: LazyListState, animate: Boolean = 
     } else {
       listState.scrollToItem(itemCount - 1, scrollOffset = 1000000)
     }
+  }
+}
+
+/**
+ * A thin progress strip shown above the chat input while a prompt is being
+ * processed. Surfaces:
+ *   - Durante el prefill (preparing / antes de que llegue el primer token de la
+ *     respuesta): porcentaje **estimado** sobre `promptTokens / promptTokensPerSec`,
+ *     donde `promptTokensPerSec` es un EMA por modelo guardado en SharedPreferences.
+ *     No es exacto (la API JNI no expone progreso real de prefill), pero converge a
+ *     valores realistas tras un par de envíos.
+ *   - Durante el decoding: porcentaje sobre `streamedTokens / maxTokens` real.
+ *   - En ambas fases: tiempo transcurrido + memoria PSS del proceso (incluye heap
+ *     Java + memoria nativa del modelo, vía `Debug.MemoryInfo`). El antiguo cálculo
+ *     `Runtime.totalMemory() - freeMemory()` solo veía el heap de la VM, que oscila
+ *     0–32 MB porque el GC libera/comprime objetos Compose mientras el modelo (en
+ *     memoria nativa, mmap del .task) queda invisible.
+ */
+@Composable
+private fun GenerationProgressBar(
+  inProgress: Boolean,
+  preparing: Boolean,
+  messages: List<ChatMessage>,
+  maxTokens: Int,
+) {
+  if (!inProgress) return
+
+  val context = androidx.compose.ui.platform.LocalContext.current
+  val prefs = remember(context) {
+    context.getSharedPreferences("bluedge_progress", android.content.Context.MODE_PRIVATE)
+  }
+
+  // ---- Time tick (1 s) -----------------------------------------------------------
+  var startMs by remember { mutableStateOf(System.currentTimeMillis()) }
+  var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
+  var pssMb by remember { mutableIntStateOf(0) }
+  androidx.compose.runtime.LaunchedEffect(inProgress) {
+    if (!inProgress) return@LaunchedEffect
+    startMs = System.currentTimeMillis()
+    nowMs = startMs
+    while (true) {
+      // Sample PSS every 1 s. `Debug.getMemoryInfo` is ~1-3 ms in practice; safe
+      // off the main thread but we're on the Main dispatcher so we keep it as-is
+      // (Compose recompositions are debounced).
+      val mi = android.os.Debug.MemoryInfo()
+      android.os.Debug.getMemoryInfo(mi)
+      pssMb = mi.totalPss / 1024  // KB → MB
+      kotlinx.coroutines.delay(1000)
+      nowMs = System.currentTimeMillis()
+    }
+  }
+
+  // ---- Prompt-side tokens (last USER message) ------------------------------------
+  // Rough char→token ratio for SentencePiece on Spanish/English text.
+  val charsPerToken = 3.8f
+  val promptChars = remember(messages.size) {
+    val lastUser = messages.lastOrNull { it.side == ChatSide.USER }
+    if (lastUser is ChatMessageText) lastUser.content.length else 0
+  }
+  val promptTokens = (promptChars / charsPerToken).toInt().coerceAtLeast(1)
+
+  // ---- Streaming tokens (last AGENT message) -------------------------------------
+  val streamingChars = run {
+    val last = messages.lastOrNull()
+    if (last is ChatMessageText && last.side == ChatSide.AGENT) last.content.length else 0
+  }
+  val streamedTokens = (streamingChars / charsPerToken).toInt()
+  val isDecoding = streamedTokens > 0
+
+  // ---- Throughput EMA (per device, model-agnostic key for now) -------------------
+  // After each successful send we update the prefill TPS so the next prediction is
+  // closer to reality.
+  val prefillTpsKey = "prefill_tps"
+  val decodeTpsKey = "decode_tps"
+  val baselinePrefillTps = remember { prefs.getFloat(prefillTpsKey, 60f) }
+  val baselineDecodeTps = remember { prefs.getFloat(decodeTpsKey, 8f) }
+
+  // ---- Compute pct ---------------------------------------------------------------
+  val elapsedMs = (nowMs - startMs).coerceAtLeast(1L)
+  val elapsedSec = elapsedMs / 1000.0
+
+  // First time we see a streamed token, record the prefill TPS observed
+  // (promptTokens / elapsedSec at that moment) and persist as EMA.
+  var prefillEndedAtMs by remember { mutableStateOf(0L) }
+  androidx.compose.runtime.LaunchedEffect(isDecoding) {
+    if (isDecoding && prefillEndedAtMs == 0L) {
+      prefillEndedAtMs = nowMs
+      val prefillSec = ((prefillEndedAtMs - startMs) / 1000.0).coerceAtLeast(0.05)
+      val observedTps = (promptTokens / prefillSec).toFloat().coerceIn(1f, 1000f)
+      val updated = baselinePrefillTps * 0.7f + observedTps * 0.3f
+      prefs.edit().putFloat(prefillTpsKey, updated).apply()
+    }
+  }
+  // Persist decode TPS at the end of streaming.
+  androidx.compose.runtime.LaunchedEffect(streamedTokens) {
+    if (streamedTokens > 0 && prefillEndedAtMs > 0L) {
+      val decodeSec = ((nowMs - prefillEndedAtMs) / 1000.0).coerceAtLeast(0.05)
+      val observedTps = (streamedTokens / decodeSec).toFloat().coerceIn(0.5f, 200f)
+      val updated = baselineDecodeTps * 0.85f + observedTps * 0.15f
+      prefs.edit().putFloat(decodeTpsKey, updated).apply()
+    }
+  }
+
+  val progress: Float
+  val phaseLabel: String
+  if (!isDecoding) {
+    // Prefill phase: estimate from promptTokens / baselinePrefillTps.
+    val estPrefillMs = (promptTokens / baselinePrefillTps * 1000f).coerceAtLeast(200f)
+    val pct = (elapsedMs.toFloat() / estPrefillMs).coerceIn(0f, 0.99f)
+    progress = pct
+    phaseLabel = "Procesando prompt… ${"%.0f".format(pct * 100f)}% • " +
+      "~${promptTokens} tok • ${"%.1f".format(elapsedSec)}s • ${pssMb} MB"
+  } else {
+    // Decode phase: streamedTokens / maxTokens.
+    val pct = (streamedTokens.toFloat() / maxTokens.coerceAtLeast(1).toFloat())
+      .coerceIn(0f, 1f)
+    progress = pct
+    val decodeSec = ((nowMs - prefillEndedAtMs).coerceAtLeast(1L) / 1000.0)
+    val tps = if (decodeSec > 0.0) streamedTokens / decodeSec else 0.0
+    phaseLabel = "Generando ${"%.0f".format(pct * 100f)}% • " +
+      "${streamedTokens}/${maxTokens} tok • ${"%.1f".format(tps)} tok/s • ${pssMb} MB"
+  }
+
+  androidx.compose.foundation.layout.Column(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(horizontal = 12.dp, vertical = 4.dp),
+  ) {
+    if (preparing && !isDecoding) {
+      LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+    } else {
+      LinearProgressIndicator(
+        progress = { progress },
+        modifier = Modifier.fillMaxWidth(),
+      )
+    }
+    Text(
+      text = phaseLabel,
+      style = MaterialTheme.typography.labelSmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      modifier = Modifier.padding(top = 2.dp),
+    )
   }
 }

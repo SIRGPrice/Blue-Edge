@@ -59,6 +59,11 @@ open class LlmChatViewModelBase() : ChatViewModel() {
   ) {
     val accelerator = model.getStringConfigValue(key = ConfigKeys.ACCELERATOR, defaultValue = "")
     viewModelScope.launch(Dispatchers.Default) {
+      val tEnter = System.currentTimeMillis()
+      Log.i(
+        "BlueEdgePerf",
+        "generateResponse: ENTER model=${model.name} accel=$accelerator inputChars=${input.length} images=${images.size} audios=${audioMessages.size}",
+      )
       setInProgress(true)
       setPreparing(true)
 
@@ -66,19 +71,46 @@ open class LlmChatViewModelBase() : ChatViewModel() {
       addMessage(model = model, message = ChatMessageLoading(accelerator = accelerator))
 
       // Wait for instance to be initialized.
+      val tWaitInstance = System.currentTimeMillis()
+      val maxInstanceWaitMs = 60_000L
       while (model.instance == null) {
+        if (System.currentTimeMillis() - tWaitInstance > maxInstanceWaitMs) {
+          Log.e(
+            "BlueEdgePerf",
+            "generateResponse: TIMEOUT esperando a que el modelo se inicializase (model=${model.name})",
+          )
+          // Liberar la UI: quitar el LOADING bubble y reportar error.
+          if (getLastMessage(model = model) is ChatMessageLoading) {
+            removeLastMessage(model = model)
+          }
+          setInProgress(false)
+          setPreparing(false)
+          onError(
+            "El modelo no terminó de inicializarse en ${maxInstanceWaitMs / 1000}s. " +
+              "Inténtalo de nuevo.",
+          )
+          return@launch
+        }
         delay(100)
       }
+      val instanceWaitMs = System.currentTimeMillis() - tWaitInstance
+      Log.i("BlueEdgePerf", "generateResponse: instance ready after ${instanceWaitMs} ms")
       delay(500)
 
       // Run inference.
+      val tEncode = System.currentTimeMillis()
       val audioClips: MutableList<ByteArray> = mutableListOf()
       for (audioMessage in audioMessages) {
         audioClips.add(audioMessage.genByteArrayForWav())
       }
+      Log.i(
+        "BlueEdgePerf",
+        "generateResponse: audio WAV encode took ${System.currentTimeMillis() - tEncode} ms (clips=${audioClips.size})",
+      )
 
       var firstRun = true
       val start = System.currentTimeMillis()
+      Log.i("BlueEdgePerf", "generateResponse: pre-runInference total prep=${start - tEnter} ms")
 
       try {
         val resultListener: (String, Boolean, String?) -> Unit =
@@ -170,6 +202,10 @@ open class LlmChatViewModelBase() : ChatViewModel() {
               if (firstRun) {
                 firstRun = false
                 setPreparing(false)
+                Log.i(
+                  "BlueEdgePerf",
+                  "generateResponse: FIRST TOKEN after ${System.currentTimeMillis() - start} ms (since runInference call)",
+                )
                 onFirstToken(model)
               }
 
@@ -193,6 +229,10 @@ open class LlmChatViewModelBase() : ChatViewModel() {
                   }
                 }
                 setInProgress(false)
+                Log.i(
+                  "BlueEdgePerf",
+                  "generateResponse: DONE total ${System.currentTimeMillis() - start} ms",
+                )
                 onDone()
               }
             }
@@ -226,6 +266,10 @@ open class LlmChatViewModelBase() : ChatViewModel() {
           coroutineScope = viewModelScope,
           extraContext = extraContext,
         )
+        Log.i(
+          "BlueEdgePerf",
+          "generateResponse: runInference call returned (async dispatch) after ${System.currentTimeMillis() - start} ms",
+        )
       } catch (e: Exception) {
         Log.e(TAG, "Error occurred while running inference", e)
         setInProgress(false)
@@ -241,6 +285,7 @@ open class LlmChatViewModelBase() : ChatViewModel() {
       removeLastMessage(model = model)
     }
     setInProgress(false)
+    setPreparing(false)
     model.runtimeHelper.stopResponse(model)
     Log.d(TAG, "Done stopping response")
   }
@@ -288,8 +333,15 @@ open class LlmChatViewModelBase() : ChatViewModel() {
     allowThinking: Boolean = false,
   ) {
     viewModelScope.launch(Dispatchers.Default) {
-      // Wait for model to be initialized.
+      // Wait for model to be initialized (with timeout to avoid hanging forever).
+      val tWait = System.currentTimeMillis()
+      val maxWaitMs = 60_000L
       while (model.instance == null) {
+        if (System.currentTimeMillis() - tWait > maxWaitMs) {
+          Log.e(TAG, "runAgain: timeout waiting for model.instance (model=${model.name})")
+          onError("El modelo no terminó de inicializarse en ${maxWaitMs / 1000}s.")
+          return@launch
+        }
         delay(100)
       }
 

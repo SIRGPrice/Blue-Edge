@@ -204,6 +204,11 @@ constructor(
   val authService = AuthorizationService(context)
   var curAccessToken: String = ""
 
+  init {
+    // Open the permanent-document SQLite handle eagerly and clean up legacy RAG dbs.
+    chatAttachments.prewarm()
+  }
+
   override fun onCleared() {
     authService.dispose()
   }

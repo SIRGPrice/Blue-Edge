@@ -35,7 +35,7 @@ import com.google.ai.edge.gallery.proto.BenchmarkResults
 import com.google.ai.edge.gallery.proto.CutoutCollection
 import com.google.ai.edge.gallery.proto.Settings
 import com.google.ai.edge.gallery.proto.UserData
-import com.google.ai.edge.gallery.ui.common.chat.rag.PersistentRagStore
+import com.google.ai.edge.gallery.ui.common.chat.rag.PermanentDocumentStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -161,12 +161,12 @@ internal object AppModule {
     return DefaultDownloadRepository(context, lifecycleProvider)
   }
 
-  // Provides the on-disk persistent RAG store used by document attachments / "memoria".
+  // Provides the on-disk store for permanent (text-only) document attachments.
   @Provides
   @Singleton
-  fun providePersistentRagStore(
+  fun providePermanentDocumentStore(
     @ApplicationContext context: Context,
-  ): PersistentRagStore {
-    return PersistentRagStore(context)
+  ): PermanentDocumentStore {
+    return PermanentDocumentStore(context)
   }
 }

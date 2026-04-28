@@ -332,6 +332,10 @@
   <string name="cd_stop_icon">Stop</string>
   <!-- Content description spoken when the delete icon is focused. [CHAR_LIMIT=NONE] -->
   <string name="cd_delete_icon">Delete</string>
+  <!-- Long-press chat-bubble action menu: edit the message inline. -->
+  <string name="action_edit_message">Editar</string>
+  <!-- Long-press chat-bubble action menu: delete this message. -->
+  <string name="action_delete_message">Eliminar</string>
   <!-- Content description spoken when the close icon is focused. [CHAR_LIMIT=NONE] -->
   <string name="cd_close_icon">Close</string>
   <!-- Content description spoken when the selected icon is focused. [CHAR_LIMIT=NONE] -->
