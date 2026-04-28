@@ -167,6 +167,25 @@ Reutilización estimada de código: 70–85 %.
   `BlueEdgeLlmBridge.swift` recrea la `LlmInference.Session` por
   generación con esas opciones. `awaitClose { bridge.close() }` libera la
   sesión MediaPipe cuando la coroutine se cancela (botón Stop del chat).
+- **Bridges Swift Audio reales**: `BlueEdgeAudioRecorderBridge.swift`
+  (`AVAudioRecorder` → m4a/AAC) y `BlueEdgeAudioPlayerBridge.swift`
+  (`AVAudioEngine` + `AVAudioPCMBuffer` para PCM16 mono).
+  `AudioRecorder.ios.kt` y `AudioPlayer.ios.kt` ahora delegan al bridge a
+  través de `IosBridgeRegistry`. Aggregate `BlueEdgeIosBridges` ampliado
+  con `audioRecorder`/`audioPlayer` opcionales.
+- **Settings screen compartida** (`commonMain/ui/settings/SettingsScreen.kt`)
+  con cambio de tema (`AUTO/LIGHT/DARK`), inspección/limpieza del último
+  modelo cargado y reset de consent. Ruta `SettingsRoute` añadida al
+  `RootNavigator`.
+- **HF OAuth config** (`commonMain/auth/HuggingFaceOAuth.kt`) con
+  `clientId/authEndpoint/tokenEndpoint/redirectUri/scopes` y
+  `defaultConfig()` para inyectar al `OAuthClient` desde la futura UI de
+  descarga.
+- **Tests unitarios commonMain**: `SettingsRepositoryTest`,
+  `BenchmarkRunnerTest`, `BenchmarkViewModelTest`,
+  `ModelManagerViewModelTest`. Fakes (`FakeLlmEngine`, `FakeModelStorage`,
+  `FakeModelImporter`) e `InMemorySettings` en `shared/src/commonTest/`.
+  `:shared:testDebugUnitTest` ✅ verde.
 - **Navegación Voyager**: `shared/commonMain/ui/navigation/RootNavigator.kt`
   con `HomeScreen`, `ChatRoute`, `ModelManagerScreen`, `BenchmarkScreen` y
   `BackScaffold`/`PlaceholderBody`. Reemplaza `GalleryNavGraph.kt`.

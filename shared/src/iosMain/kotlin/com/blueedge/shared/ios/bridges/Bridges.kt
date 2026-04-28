@@ -65,11 +65,33 @@ interface ModelImportBridgeIos {
   fun pickAndImport(onResult: (List<String>) -> Unit)
 }
 
+/** Implemented by `BlueEdgeAudioRecorderBridge.swift`. */
+interface AudioRecorderBridgeIos {
+  /** Throws on permission/IO error. */
+  fun start(sampleRate: Int, bitRate: Int)
+  /** Returns the encoded m4a bytes (empty on error). */
+  fun stop(): ByteArray
+  fun cancel()
+}
+
+/** Implemented by `BlueEdgeAudioPlayerBridge.swift`. */
+interface AudioPlayerBridgeIos {
+  fun play(
+    pcm16Mono: ByteArray,
+    sampleRate: Int,
+    onProgress: (Float) -> Unit,
+    onFinished: () -> Unit,
+  )
+  fun stop()
+}
+
 /** Aggregate handed once from Swift to Kotlin at app launch. */
 data class BlueEdgeIosBridges(
   val llm: LlmBridgeIos,
   val auth: AuthBridgeIos,
   val download: DownloadBridgeIos,
   val modelImport: ModelImportBridgeIos? = null,
+  val audioRecorder: AudioRecorderBridgeIos? = null,
+  val audioPlayer: AudioPlayerBridgeIos? = null,
 )
 
