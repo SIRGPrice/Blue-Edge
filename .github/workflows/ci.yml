@@ -1,11 +1,11 @@
-# Continuous Integration — guarantees Android stays buildable independently
+﻿# Continuous Integration â€” guarantees Android stays buildable independently
 # of the iOS porting status.
 #
 # Two parallel jobs:
-#   1. android   — compiles `:app` (the existing Android application) and
+#   1. android   â€” compiles `:app` (the existing Android application) and
 #                  the Android target of `:shared`. Runs on every push/PR.
 #                  THIS IS THE INVARIANT: every commit must keep this green.
-#   2. ios       — compiles `:shared` for iOS (Kotlin/Native) and runs
+#   2. ios       â€” compiles `:shared` for iOS (Kotlin/Native) and runs
 #                  `xcodebuild` on `iosApp`. Best-effort: failure here does
 #                  NOT block the Android pipeline.
 #
@@ -20,7 +20,7 @@ on:
 jobs:
 
   android:
-    name: Android — :app + :shared (assembleDebug)
+    name: Android â€” :app + :shared (assembleDebug)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,8 +42,8 @@ jobs:
         run: ./gradlew :shared:assembleDebug --stacktrace
 
   ios-shared:
-    name: iOS — :shared Kotlin/Native compile (best-effort)
-    runs-on: macos-14
+    name: iOS â€” :shared Kotlin/Native compile (best-effort)
+    runs-on: macos-15
     continue-on-error: true        # never blocks the Android pipeline
     steps:
       - uses: actions/checkout@v4
@@ -55,8 +55,8 @@ jobs:
         run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace
 
   ios-app:
-    name: iOS — host app (Xcode build, best-effort)
-    runs-on: macos-14
+    name: iOS â€” host app (Xcode build, best-effort)
+    runs-on: macos-15
     needs: ios-shared
     continue-on-error: true        # never blocks the Android pipeline
     steps:
@@ -95,8 +95,8 @@ jobs:
           retention-days: 14
 
   ios-archive:
-    name: iOS — signed .ipa for TestFlight (manual trigger)
-    runs-on: macos-14
+    name: iOS â€” signed .ipa for TestFlight (manual trigger)
+    runs-on: macos-15
     if: github.event_name == 'workflow_dispatch'
     continue-on-error: true        # never blocks the Android pipeline
     steps:
