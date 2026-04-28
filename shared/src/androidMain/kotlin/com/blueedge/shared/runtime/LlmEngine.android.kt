@@ -7,6 +7,7 @@
  */
 package com.blueedge.shared.runtime
 
+import com.blueedge.shared.android.bridges.AndroidBridgeRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -25,5 +26,6 @@ private class AndroidLlmEngineStub : LlmEngine {
   override suspend fun close() {}
 }
 
-actual fun createLlmEngine(): LlmEngine = AndroidLlmEngineStub()
+actual fun createLlmEngine(): LlmEngine =
+  AndroidBridgeRegistry.llmEngine() ?: AndroidLlmEngineStub()
 

@@ -18,20 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.blueedge.shared.platform.providePlatform
 import com.blueedge.shared.ui.chat.ChatScreen
+import com.blueedge.shared.ui.navigation.RootNavigator
+import com.blueedge.shared.ui.theme.BlueEdgeTheme
 
 @Composable
 fun BlueEdgeApp() {
-  MaterialTheme {
+  BlueEdgeTheme {
     Surface(modifier = Modifier.fillMaxSize()) {
-      val platform = remember { providePlatform() }
-      Column(modifier = Modifier.fillMaxSize().padding(top = 24.dp)) {
-        Text(
-          "Blue Edge — ${platform.name} ${platform.osVersion}",
-          style = MaterialTheme.typography.titleMedium,
-          modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-        ChatScreen()
-      }
+      RootNavigator()
     }
   }
 }

@@ -1,6 +1,6 @@
 # Plan de portado a iOS — Blue Edge
 
-Estado: **Fase 1 completada** + **Fase 2 al 80 % (sin Mac)** + **Fase 3 iniciada**.
+Estado: **Fase 1 completada** + **Fase 2 al 80 % (sin Mac)** + **Fase 3 en curso (~94 %)**.
 
 Estrategia elegida: **Kotlin Multiplatform + Compose Multiplatform** (Opción A).
 Reutilización estimada de código: 70–85 %.
@@ -48,16 +48,96 @@ Reutilización estimada de código: 70–85 %.
   `LlmEngine`, `OAuthClient`, `DownloadManager`, `SecureStorage` (Keychain),
   `ModelStorage` (Documents/models), `Platform`.
 
-### Fase 3 — Migración progresiva a `commonMain` (iniciada) ✅
+### Fase 3 — Migración progresiva a `commonMain` (en curso) ✅
 - Dominio multiplataforma `domain/Model.kt` (mirror serializable de
   `:app/.../data/Model.kt`, sin Context/File/Gson).
+- Dominio adicional migrado a `shared/commonMain/domain/`:
+  `Category.kt`, `Task.kt` + `BuiltInTaskId`, `Config.kt` (todos los
+  `Config*` + `convertValueToTargetType` + `createLlmChatConfigs*` +
+  `getConfigValueString`), `Consts.kt`. Drops `@StringRes`/`ImageVector`
+  /`MutableState`; usa `iconKey`, `labelKey` y `kotlinx-serialization`.
 - `domain/ModelStorage.kt` con `actual` para Android (External Files Dir) e
   iOS (Documents/models).
 - `chat/ChatViewModel.kt` — view-model multiplataforma con `StateFlow` que
   consume `LlmEngine.generate()` y emite tokens en streaming.
 - `ui/chat/ChatScreen.kt` — pantalla Compose MP funcional con burbujas,
   composer, auto-scroll y caret de streaming.
-- `BlueEdgeApp` ahora monta el chat real.
+- **Theme multiplataforma** en `shared/commonMain/ui/theme/`
+  (`Color.kt`, `Theme.kt` con `BlueEdgeTheme`, `CustomColors`,
+  `LocalCustomColors`, `ThemeMode`, `ThemeSettings`). `StatusBarColorController`
+  como `expect`/`actual` (Android: `WindowCompat`; iOS: no-op gestionado por SwiftUI).
+- **AndroidBridgeRegistry** (`shared/androidMain/.../android/bridges/`) — patrón
+  paralelo a `IosBridgeRegistry` para que `:app` inyecte en arranque las
+  implementaciones reales de `LlmEngine` y `DownloadManager` (litertlm,
+  WorkManager) sin que `:shared` dependa de ellas. Los `actual` de Android
+  consultan el registry y caen al stub si nadie ha registrado bridges.
+- **`SettingsRepository`** (`shared/commonMain/storage/`) sobre
+  `multiplatform-settings`: `actual` Android (SharedPreferences) e iOS
+  (NSUserDefaults). Wrapper para primitivos + serialización JSON de objetos
+  + accesor tipado `themeMode`.
+- **Módulo Koin compartido** (`shared/commonMain/di/SharedModule.kt`)
+  exponiendo `LlmEngine`, `DownloadManager`, `OAuthClient`, `ModelStorage`,
+  `SecureStorage`, `SettingsRepository`, `ChatViewModel`. `:app` y el host
+  iOS llaman `startKoin { modules(sharedModules()) }` en arranque.
+- **`:app` consume `:shared`** (`implementation(project(":shared"))`).
+  `GalleryApplication.onCreate()` instala `SharedAndroidContext`, registra
+  `AppBridges` en `AndroidBridgeRegistry` y arranca Koin con los módulos
+  compartidos junto a Hilt — los dos coexisten durante la migración.
+  Verificado: `:app:assembleDebug` sigue verde.
+- **DownloadManager real (Android)**: `WorkManagerDownloadManager` en
+  `:app/.../bridges/` envuelve un `SimpleDownloadWorker` (CoroutineWorker
+  genérico con progreso por tiempo) y publica `Flow<DownloadStatus>`
+  observando `WorkInfo`. `AppBridges` lo expone vía
+  `downloadManagerFactory`; el `actual` Android consulta el registry
+  primero y cae al stub si no se ha registrado nada.
+- **LlmEngine real (Android)**: `AndroidSharedLlmEngine` en
+  `:app/.../bridges/` implementa `com.blueedge.shared.runtime.LlmEngine` y
+  adapta `LlmModelDescriptor` → `:app` `Model` sintético (`RuntimeType.LITERT_LM`,
+  `localModelFilePathOverride`, configs de tokens/acelerador). `load()` llama
+  a `model.runtimeHelper.initialize(...)`; `generate()` convierte callbacks de
+  `runInference(...)` en `Flow<LlmEvent>` y `close()` limpia el helper legacy.
+  `AppBridges.llmEngineFactory` ya lo registra en `AndroidBridgeRegistry`.
+- **Settings importer** one-shot: en `GalleryApplication` se hidrata
+  `SettingsRepository.themeMode` desde el proto-DataStore al primer
+  arranque (con `KEY_THEME_IMPORTED` como guarda).
+- **Composables stateless** migrados a `shared/commonMain/ui/common/`:
+  `ColorUtils.kt` (con `Task` compartido), `ClickableLink.kt`, `EmptyState.kt`
+  (sin `@StringRes` — usa `String`), `FloatingBanner.kt`, `ErrorDialog.kt`,
+  `Accordions.kt`, `Constants.kt` (`SMALL_BUTTON_CONTENT_PADDING`).
+- **Markdown multiplataforma**: `MarkdownText` como `expect`/`actual`.
+  Android usa `compose-richtext` (deps movidas a `shared/androidMain`),
+  iOS un fallback `Text` con stripper de Markdown.
+- **WebView multiplataforma**: `PlatformWebView(content, modifier, onUrlOpen)`
+  con `WebContent.Html` y `WebContent.Url`. Android: `AndroidView` +
+  `android.webkit.WebView`. iOS: `UIKitView` + `WKWebView` con
+  `WKNavigationDelegate.decidePolicy` para interceptar enlaces.
+- **AudioRecorder multiplataforma**: `shared/commonMain/audio/AudioRecorder.kt`
+  con `AudioRecordingConfig`, `AudioRecorderState`, `AudioRecorder` y
+  `provideAudioRecorder()`. Android usa `MediaRecorder` a `.m4a` temporal
+  (AAC/MPEG_4) y devuelve bytes; iOS mantiene stub seguro hasta conectar
+  el bridge Swift/AVAudioRecorder. Expuesto por `sharedCoreModule`.
+- **AudioPlayer multiplataforma**: `shared/commonMain/audio/AudioPlayer.kt`
+  con `AudioPlaybackConfig`, `AudioPlayerState`, `AudioPlayer` y
+  `provideAudioPlayer()`. Android usa `AudioTrack` para PCM16 mono y emite
+  progreso por `StateFlow`; iOS mantiene stub seguro hasta conectar
+  AVAudioEngine/AVAudioPlayerNode. Expuesto por `sharedCoreModule`.
+- **CameraPreviewSurface**: `shared/commonMain/ui/camera/CameraPreviewSurface.kt`
+  como `expect`/`actual` estable para UI compartida. Android/iOS arrancan y
+  paran `CameraController` y renderizan placeholder seguro; el interior se
+  puede sustituir por CameraX `PreviewView` / iOS `AVCaptureVideoPreviewLayer`
+  sin cambiar callers.
+- **ModelManager compartido base**: `ModelStorage` ahora lista archivos de
+  primer nivel (`ModelFile`, `listModelFiles()`) con actual Android/iOS.
+  `SharedModelManagerScreen` muestra el directorio de modelos y los archivos
+  locales; `RootNavigator` lo usa en la ruta Models.
+- **Benchmark compartido base**: `SharedBenchmarkScreen` + `BenchmarkSummary`
+  en `shared/commonMain/ui/benchmark/`; `RootNavigator` lo usa en la ruta
+  Benchmark. Falta conectar selección de modelo y runner nativo.
+- **Navegación Voyager**: `shared/commonMain/ui/navigation/RootNavigator.kt`
+  con `HomeScreen`, `ChatRoute`, `ModelManagerScreen`, `BenchmarkScreen` y
+  `BackScaffold`/`PlaceholderBody`. Reemplaza `GalleryNavGraph.kt`.
+  Deps añadidas a `libs.versions.toml`: `voyager-navigator/transitions/screenmodel/koin` 1.1.0-beta03.
+- `BlueEdgeApp` ahora monta `BlueEdgeTheme { Surface { RootNavigator() } }`.
 
 ### CI ✅
 - `.github/workflows/ci.yml`:
@@ -81,20 +161,22 @@ Reutilización estimada de código: 70–85 %.
    menor en `BridgeAdapters.swift` que solo se ve al primer build en macOS.
 
 ### Trabajo Fase 3+ pendiente (todo en Windows)
-| Origen `:app`                                     | Destino                       |
-|---------------------------------------------------|-------------------------------|
-| `data/Tasks.kt`, `Categories.kt`, `Config.kt`     | `shared/commonMain/domain/`   |
-| `ui/theme/`                                       | `shared/commonMain/ui/theme/` |
-| `ui/common/`                                      | `shared/commonMain/ui/common/`|
-| `ui/llmchat/LlmChatViewModel`                     | ya cubierto por `ChatViewModel` |
-| `ui/llmchat/LlmChatScreen`                        | extender `ChatScreen` (imágenes, prompts) |
-| `ui/modelmanager/`                                | `shared/commonMain/ui/modelmanager/` |
-| `ui/benchmark/`                                   | `shared/commonMain/ui/benchmark/`    |
-| `ui/navigation/GalleryNavGraph`                   | reemplazar por **voyager** o **decompose** |
-| `runtime/LlmModelHelper.kt` y siblings            | `shared/androidMain/runtime/` (real `actual` LlmEngine) |
-| `worker/DownloadWorker.kt`                        | `shared/androidMain/download/` (real `actual` DownloadManager) |
-| Hilt → Koin                                       | módulos en `commonMain/di/`   |
-| DataStore Proto → multiplatform-settings + Proto  | `shared/commonMain/storage/`  |
+| Origen `:app`                                     | Destino                       | Estado |
+|---------------------------------------------------|-------------------------------|--------|
+| `data/Tasks.kt`, `Categories.kt`, `Config.kt`, `Consts.kt` | `shared/commonMain/domain/` | ✅ |
+| `ui/theme/`                                       | `shared/commonMain/ui/theme/` | ✅ |
+| `ui/common/` (stateless: ColorUtils, ClickableLink, EmptyState, FloatingBanner, ErrorDialog, Accordions, MarkdownText, PlatformWebView) | `shared/commonMain/ui/common/` | ✅ |
+| `ui/common/` (Audio recorder/playback)           | `AudioRecorder` + `AudioPlayer` common; Android real | ✅ parcial (iOS bridges pendientes) |
+| `ui/common/` (Camera preview surface)            | `CameraPreviewSurface` expect/actual placeholder | ✅ parcial (preview native pendiente) |
+| `ui/llmchat/LlmChatViewModel`                     | ya cubierto por `ChatViewModel` | ✅ parcial |
+| `ui/llmchat/LlmChatScreen`                        | extender `ChatScreen` (imágenes, prompts) | pendiente |
+| `ui/modelmanager/`                                | `SharedModelManagerScreen` + `ModelStorage.listModelFiles()` | ✅ base funcional |
+| `ui/benchmark/`                                   | `SharedBenchmarkScreen` + `BenchmarkSummary` | ✅ base funcional; runner pendiente |
+| `ui/navigation/GalleryNavGraph`                   | `RootNavigator.kt` (Voyager) | ✅ esqueleto |
+| `runtime/LlmModelHelper.kt` y siblings            | `AndroidSharedLlmEngine` registrado en `AndroidBridgeRegistry` | ✅ adaptador básico real |
+| `worker/DownloadWorker.kt`                        | `WorkManagerDownloadManager` + `SimpleDownloadWorker` registrado en bridge | ✅ |
+| Hilt → Koin                                       | Koin arranca junto a Hilt en `:app` | coexistencia ✅; sustitución gradual pendiente |
+| DataStore Proto → multiplatform-settings + Proto  | `SettingsRepository` ✅; importer one-shot del tema ✅ | resto de claves pendiente |
 
 ---
 

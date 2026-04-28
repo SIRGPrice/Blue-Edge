@@ -6,6 +6,7 @@
  */
 package com.blueedge.shared.download
 
+import com.blueedge.shared.android.bridges.AndroidBridgeRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -16,5 +17,6 @@ private class AndroidDownloadManagerStub : DownloadManager {
   override fun cancel(id: String) {}
 }
 
-actual fun provideDownloadManager(): DownloadManager = AndroidDownloadManagerStub()
+actual fun provideDownloadManager(): DownloadManager =
+  AndroidBridgeRegistry.downloadManager() ?: AndroidDownloadManagerStub()
 

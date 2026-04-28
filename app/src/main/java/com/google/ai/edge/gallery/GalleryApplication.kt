@@ -21,12 +21,21 @@ import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.blueedge.shared.android.bridges.AndroidBridgeRegistry
+import com.blueedge.shared.di.sharedModules
+import com.blueedge.shared.platform.AndroidContext as SharedAndroidContext
+import com.blueedge.shared.storage.SettingsRepository
+import com.blueedge.shared.ui.theme.ThemeMode as SharedThemeMode
+import com.google.ai.edge.gallery.bridges.AppBridges
 import com.google.ai.edge.gallery.common.CrashReporter
 import com.google.ai.edge.gallery.data.DataStoreRepository
+import com.google.ai.edge.gallery.proto.Theme
 import com.google.ai.edge.gallery.runtime.ModelLifecycleManager
 import com.google.ai.edge.gallery.ui.theme.ThemeSettings
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
 
 @HiltAndroidApp
 class GalleryApplication : Application() {
@@ -35,8 +44,24 @@ class GalleryApplication : Application() {
   @Inject lateinit var modelLifecycleManager: ModelLifecycleManager
   @Inject lateinit var appLifecycleProvider: AppLifecycleProvider
 
+  private val KEY_THEME_IMPORTED = "blueedge.theme.imported"
+
   override fun onCreate() {
     super.onCreate()
+
+    // Bootstrap the shared KMP module: install the application context for
+    // expect/actual providers (Settings, ModelStorage, ...) and start Koin
+    // with the shared modules. Hilt remains the DI container of `:app` for
+    // now; both DI graphs coexist during the migration.
+    try {
+      SharedAndroidContext.install(applicationContext)
+      AndroidBridgeRegistry.install(AppBridges(applicationContext))
+      if (GlobalContext.getOrNull() == null) {
+        startKoin { modules(sharedModules()) }
+      }
+    } catch (t: Throwable) {
+      Log.e("BlueEdgeCrash", "Shared KMP bootstrap failed", t)
+    }
 
     // Install a global crash logger BEFORE anything else so any uncaught exception
     // (Compose, coroutines on Default/IO via JobCancellationException -> rethrow,
@@ -81,6 +106,29 @@ class GalleryApplication : Application() {
     } catch (t: Throwable) {
       Log.e("BlueEdgeCrash", "readTheme failed; using default theme", t)
       CrashReporter.persist(applicationContext, Thread.currentThread(), t)
+    }
+
+    // One-shot import of the theme override into the shared `SettingsRepository`
+    // so iOS and any future shared-only UI agree on the user's choice without
+    // having to read the proto DataStore directly. The flag prevents repeated
+    // imports if the user later changes the theme through the legacy UI; once
+    // `:app` consumes the shared theme directly this whole block can be deleted.
+    try {
+      val koin = GlobalContext.getOrNull()
+      if (koin != null) {
+        val settings: SettingsRepository = koin.get()
+        if (!settings.getBoolean(KEY_THEME_IMPORTED, default = false)) {
+          val proto = ThemeSettings.themeOverride.value
+          settings.themeMode = when (proto) {
+            Theme.THEME_DARK -> SharedThemeMode.DARK
+            Theme.THEME_LIGHT -> SharedThemeMode.LIGHT
+            else -> SharedThemeMode.AUTO
+          }
+          settings.putBoolean(KEY_THEME_IMPORTED, true)
+        }
+      }
+    } catch (t: Throwable) {
+      Log.e("BlueEdgeCrash", "Theme importer failed (non-fatal)", t)
     }
 
     // Observe the whole-process lifecycle so the model lifecycle manager can decide whether to

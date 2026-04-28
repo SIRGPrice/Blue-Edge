@@ -26,6 +26,21 @@ private class AndroidModelStorage(private val ctx: Context) : ModelStorage {
       listOf(dir, fileName).joinToString(File.separator)
     }
   }
+
+  override fun listModelFiles(): List<ModelFile> {
+    val root = File(baseModelsDir)
+    return root.listFiles()
+      ?.sortedWith(compareByDescending<File> { it.isDirectory }.thenBy { it.name.lowercase() })
+      ?.map { file ->
+        ModelFile(
+          name = file.name,
+          absolutePath = file.absolutePath,
+          sizeInBytes = if (file.isFile) file.length() else file.walkTopDown().filter { it.isFile }.sumOf { it.length() },
+          isDirectory = file.isDirectory,
+        )
+      }
+      .orEmpty()
+  }
 }
 
 actual fun provideModelStorage(): ModelStorage = AndroidModelStorage(AndroidContext.appContext)

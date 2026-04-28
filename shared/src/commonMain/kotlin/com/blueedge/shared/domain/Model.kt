@@ -27,13 +27,13 @@ enum class RuntimeType {
 }
 
 @Serializable
-enum class Accelerator {
-  @SerialName("cpu") CPU,
-  @SerialName("gpu") GPU,
+enum class Accelerator(val label: String) {
+  @SerialName("cpu") CPU("CPU"),
+  @SerialName("gpu") GPU("GPU"),
   /** CoreML delegate on Apple platforms. */
-  @SerialName("coreml") COREML,
+  @SerialName("coreml") COREML("CoreML"),
   /** NNAPI delegate on Android. */
-  @SerialName("nnapi") NNAPI,
+  @SerialName("nnapi") NNAPI("NNAPI"),
 }
 
 @Serializable
