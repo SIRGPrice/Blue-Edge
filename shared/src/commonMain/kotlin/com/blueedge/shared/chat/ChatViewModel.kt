@@ -32,6 +32,7 @@ data class ChatMessage(
 data class ChatUiState(
   val messages: List<ChatMessage> = emptyList(),
   val isModelReady: Boolean = false,
+  val isGenerating: Boolean = false,
   val errorMessage: String? = null,
 )
 
@@ -66,7 +67,7 @@ class ChatViewModel(
     val updated = _state.value.messages +
       ChatMessage(Role.USER, prompt) +
       ChatMessage(Role.ASSISTANT, "", streaming = true)
-    _state.value = _state.value.copy(messages = updated)
+    _state.value = _state.value.copy(messages = updated, isGenerating = true)
 
     generationJob = scope.launch {
       val sb = StringBuilder()
@@ -76,10 +77,16 @@ class ChatViewModel(
             sb.append(event.text)
             updateLastAssistant(sb.toString(), streaming = true)
           }
-          is LlmEvent.Done -> updateLastAssistant(sb.toString(), streaming = false)
+          is LlmEvent.Done -> {
+            updateLastAssistant(sb.toString(), streaming = false)
+            _state.value = _state.value.copy(isGenerating = false)
+          }
           is LlmEvent.Error -> {
             updateLastAssistant(sb.toString(), streaming = false)
-            _state.value = _state.value.copy(errorMessage = event.message)
+            _state.value = _state.value.copy(
+              errorMessage = event.message,
+              isGenerating = false,
+            )
           }
         }
       }
@@ -89,6 +96,26 @@ class ChatViewModel(
   fun cancelGeneration() {
     generationJob?.cancel()
     generationJob = null
+    val list = _state.value.messages.toMutableList()
+    val idx = list.indexOfLast { it.role == Role.ASSISTANT }
+    if (idx >= 0 && list[idx].streaming) {
+      list[idx] = list[idx].copy(streaming = false)
+    }
+    _state.value = _state.value.copy(messages = list, isGenerating = false)
+  }
+
+  /** Drops all messages from the conversation and any pending generation. */
+  fun clearMessages() {
+    generationJob?.cancel()
+    generationJob = null
+    _state.value = _state.value.copy(messages = emptyList(), isGenerating = false, errorMessage = null)
+  }
+
+  /** Clears the inline error banner without otherwise touching state. */
+  fun dismissError() {
+    if (_state.value.errorMessage != null) {
+      _state.value = _state.value.copy(errorMessage = null)
+    }
   }
 
   private fun updateLastAssistant(text: String, streaming: Boolean) {
