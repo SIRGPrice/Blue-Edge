@@ -127,3 +127,65 @@ final class ModelImportBridgeAdapter: NSObject, BlueEdgeSharedModelImportBridgeI
   }
 }
 
+// MARK: - Audio recorder (AVAudioRecorder)
+
+final class AudioRecorderBridgeAdapter: NSObject, BlueEdgeSharedAudioRecorderBridgeIos {
+  func startSampleRate(_ sampleRate: Int32, bitRate: Int32) {
+    do {
+      try BlueEdgeAudioRecorderBridge.shared.start(sampleRate: sampleRate, bitRate: bitRate)
+    } catch {
+      NSLog("AudioRecorderBridgeAdapter.start failed: \(error)")
+    }
+  }
+
+  func stop() -> KotlinByteArray {
+    let data = BlueEdgeAudioRecorderBridge.shared.stop()
+    return data.toKotlinByteArray()
+  }
+
+  func cancel() { BlueEdgeAudioRecorderBridge.shared.cancel() }
+}
+
+// MARK: - Audio player (AVAudioEngine)
+
+final class AudioPlayerBridgeAdapter: NSObject, BlueEdgeSharedAudioPlayerBridgeIos {
+  func playPcm16Mono(_ pcm16Mono: KotlinByteArray,
+                     sampleRate: Int32,
+                     onProgress: @escaping (KotlinFloat) -> Void,
+                     onFinished: @escaping () -> Void) {
+    let data = pcm16Mono.toData()
+    do {
+      try BlueEdgeAudioPlayerBridge.shared.play(
+        pcm16Mono: data,
+        sampleRate: sampleRate,
+        onProgress: { p in onProgress(KotlinFloat(float: p)) },
+        onFinished: onFinished)
+    } catch {
+      NSLog("AudioPlayerBridgeAdapter.play failed: \(error)")
+      onFinished()
+    }
+  }
+
+  func stop() { BlueEdgeAudioPlayerBridge.shared.stop() }
+}
+
+// MARK: - KotlinByteArray <-> Data helpers
+
+private extension KotlinByteArray {
+  func toData() -> Data {
+    var bytes = [Int8](repeating: 0, count: Int(self.size))
+    for i in 0..<Int(self.size) { bytes[i] = self.get(index: Int32(i)) }
+    return bytes.withUnsafeBytes { Data($0) }
+  }
+}
+
+private extension Data {
+  func toKotlinByteArray() -> KotlinByteArray {
+    let arr = KotlinByteArray(size: Int32(self.count))
+    self.enumerated().forEach { idx, byte in
+      arr.set(index: Int32(idx), value: Int8(bitPattern: byte))
+    }
+    return arr
+  }
+}
+

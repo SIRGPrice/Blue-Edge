@@ -45,6 +45,7 @@ import com.blueedge.shared.ui.chat.ChatScreen as SharedChatScreen
 import com.blueedge.shared.ui.consent.ConsentScreen
 import com.blueedge.shared.ui.modelmanager.ModelManagerViewModel
 import com.blueedge.shared.ui.modelmanager.SharedModelManagerScreen
+import com.blueedge.shared.ui.settings.SettingsScreen as SharedSettingsScreen
 import org.koin.mp.KoinPlatform
 
 /** Root navigation entry point used by `BlueEdgeApp`. */
@@ -78,6 +79,7 @@ object HomeScreen : Screen {
       onOpenChat = { navigator.push(ChatRoute) },
       onOpenModelManager = { navigator.push(ModelManagerScreen) },
       onOpenBenchmark = { navigator.push(BenchmarkScreen) },
+      onOpenSettings = { navigator.push(SettingsRoute) },
     )
   }
 }
@@ -112,6 +114,16 @@ object BenchmarkScreen : Screen {
   }
 }
 
+object SettingsRoute : Screen {
+  @Composable
+  override fun Content() {
+    BackScaffold(title = "Settings") {
+      val settings = remember { KoinPlatform.getKoin().get<SettingsRepository>() }
+      SharedSettingsScreen(settings = settings)
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -121,6 +133,7 @@ private fun HomeContent(
   onOpenChat: () -> Unit,
   onOpenModelManager: () -> Unit,
   onOpenBenchmark: () -> Unit,
+  onOpenSettings: () -> Unit,
 ) {
   Scaffold { padding ->
     Column(
@@ -136,6 +149,7 @@ private fun HomeContent(
       HomeAction("💬  Chat", onOpenChat)
       HomeAction("📦  Models", onOpenModelManager)
       HomeAction("📊  Benchmark", onOpenBenchmark)
+      HomeAction("⚙️  Settings", onOpenSettings)
     }
   }
 }
