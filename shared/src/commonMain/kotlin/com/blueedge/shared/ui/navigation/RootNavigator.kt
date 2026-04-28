@@ -27,19 +27,41 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.blueedge.shared.chat.ChatViewModel
+import com.blueedge.shared.storage.SettingsRepository
+import com.blueedge.shared.ui.benchmark.BenchmarkViewModel
 import com.blueedge.shared.ui.benchmark.SharedBenchmarkScreen
 import com.blueedge.shared.ui.chat.ChatScreen as SharedChatScreen
+import com.blueedge.shared.ui.consent.ConsentScreen
+import com.blueedge.shared.ui.modelmanager.ModelManagerViewModel
 import com.blueedge.shared.ui.modelmanager.SharedModelManagerScreen
+import org.koin.mp.KoinPlatform
 
 /** Root navigation entry point used by `BlueEdgeApp`. */
 @Composable
 fun RootNavigator() {
+  val settings = remember { KoinPlatform.getKoin().get<SettingsRepository>() }
+  var consented by remember {
+    mutableStateOf(settings.tosAccepted && settings.gemmaTermsAccepted)
+  }
+  if (!consented) {
+    ConsentScreen(onAccepted = {
+      settings.tosAccepted = true
+      settings.gemmaTermsAccepted = true
+      consented = true
+    })
+    return
+  }
   Navigator(screen = HomeScreen)
 }
 
@@ -63,7 +85,10 @@ object HomeScreen : Screen {
 object ChatRoute : Screen {
   @Composable
   override fun Content() {
-    BackScaffold(title = "Chat") { SharedChatScreen() }
+    BackScaffold(title = "Chat") {
+      val viewModel = remember { KoinPlatform.getKoin().get<ChatViewModel>() }
+      SharedChatScreen(viewModel = viewModel)
+    }
   }
 }
 
@@ -71,7 +96,8 @@ object ModelManagerScreen : Screen {
   @Composable
   override fun Content() {
     BackScaffold(title = "Models") {
-      SharedModelManagerScreen()
+      val viewModel = remember { KoinPlatform.getKoin().get<ModelManagerViewModel>() }
+      SharedModelManagerScreen(viewModel = viewModel)
     }
   }
 }
@@ -80,7 +106,8 @@ object BenchmarkScreen : Screen {
   @Composable
   override fun Content() {
     BackScaffold(title = "Benchmark") {
-      SharedBenchmarkScreen()
+      val viewModel = remember { KoinPlatform.getKoin().get<BenchmarkViewModel>() }
+      SharedBenchmarkScreen(viewModel = viewModel)
     }
   }
 }
@@ -142,5 +169,3 @@ private fun BackScaffold(title: String, content: @Composable () -> Unit) {
     Box(modifier = Modifier.fillMaxSize().padding(padding)) { content() }
   }
 }
-
-

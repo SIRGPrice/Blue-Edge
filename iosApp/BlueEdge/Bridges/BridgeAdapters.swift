@@ -31,10 +31,18 @@ final class LlmBridgeAdapter: NSObject, BlueEdgeSharedLlmBridgeIos {
   }
 
   func generatePrompt(_ prompt: String,
+                      temperature: Float,
+                      topK: Int32,
+                      topP: Float,
+                      randomSeed: Int32,
                       onToken: @escaping (String) -> Void,
                       onError: @escaping (String) -> Void,
                       onDone:  @escaping () -> Void) {
     impl.generate(prompt: prompt,
+                  temperature: temperature,
+                  topK: topK,
+                  topP: topP,
+                  randomSeed: randomSeed,
                   onToken: onToken,
                   onError: { err in onError(err.localizedDescription) },
                   onDone:  onDone)
@@ -108,6 +116,14 @@ final class DownloadBridgeAdapter: NSObject, BlueEdgeSharedDownloadBridgeIos {
 
   func cancelId(_ id: String) {
     BlueEdgeDownloadBridge.shared.cancel(id: id)
+  }
+}
+
+// MARK: - Model import (UIDocumentPickerViewController)
+
+final class ModelImportBridgeAdapter: NSObject, BlueEdgeSharedModelImportBridgeIos {
+  func pickAndImport(onResult: @escaping ([String]) -> Void) {
+    BlueEdgeModelImportBridge.shared.pickAndImport(onResult: onResult)
   }
 }
 

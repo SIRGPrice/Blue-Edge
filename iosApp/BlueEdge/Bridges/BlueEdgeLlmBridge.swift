@@ -29,21 +29,36 @@ import MediaPipeTasksGenAIC
     opts.maxTokens = Int(maxTokens)
     if preferGpu { opts.preferredBackend = .gpu }
     self.inference = try LlmInference(options: opts)
-    self.session = try LlmInference.Session(llmInference: self.inference!)
+    // Session is created lazily per generation so each request can apply
+    // its own sampling parameters (temperature/topK/topP/seed).
+    self.session = nil
   }
 
   /// Streams generated tokens. `onToken` is invoked on the MediaPipe callback
   /// queue; the caller is responsible for hopping to the desired thread.
   @objc public func generate(prompt: String,
+                             temperature: Float,
+                             topK: Int32,
+                             topP: Float,
+                             randomSeed: Int32,
                              onToken: @escaping (String) -> Void,
                              onError: @escaping (NSError) -> Void,
                              onDone:  @escaping () -> Void) {
-    guard let session = self.session else {
+    guard let inference = self.inference else {
       onError(NSError(domain: "BlueEdge", code: -1,
                       userInfo: [NSLocalizedDescriptionKey: "Model not loaded"]))
       return
     }
     do {
+      // Re-create session per generation so sampling parameters take effect.
+      let sessionOpts = LlmInference.Session.Options()
+      sessionOpts.temperature = temperature
+      sessionOpts.topK = Int(topK)
+      sessionOpts.topP = topP
+      sessionOpts.randomSeed = Int(randomSeed)
+      let session = try LlmInference.Session(llmInference: inference, options: sessionOpts)
+      self.session = session
+
       try session.addQueryChunk(inputText: prompt)
       try session.generateResponseAsync(progress: { partial, error in
         if let error = error {

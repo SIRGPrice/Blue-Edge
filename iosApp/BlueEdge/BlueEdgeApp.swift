@@ -20,9 +20,10 @@ struct BlueEdgeApp: App {
     // Hand the bridges to the Kotlin/Native side. Must happen before any
     // composable that resolves an LlmEngine / OAuthClient / DownloadManager.
     let bridges = BlueEdgeIosBridges(
-      llm:      LlmBridgeAdapter(),
-      auth:     AuthBridgeAdapter.shared,
-      download: DownloadBridgeAdapter()
+      llm:         LlmBridgeAdapter(),
+      auth:        AuthBridgeAdapter.shared,
+      download:    DownloadBridgeAdapter(),
+      modelImport: ModelImportBridgeAdapter()
     )
     BlueEdgeRoot.shared.start(bridges: bridges)
   }
