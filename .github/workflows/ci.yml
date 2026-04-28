@@ -174,11 +174,12 @@ jobs:
           path: iosApp/build/ipa/*.ipa
           retention-days: 30
       - name: Upload to TestFlight (App Store Connect API)
-        if: ${{ secrets.APPSTORE_API_KEY_ID != '' }}
+        # `secrets.*` cannot be referenced in `if:` directly; promote to env first.
         env:
           API_KEY_ID:     ${{ secrets.APPSTORE_API_KEY_ID }}
           API_ISSUER_ID:  ${{ secrets.APPSTORE_API_ISSUER_ID }}
           API_KEY_BASE64: ${{ secrets.APPSTORE_API_KEY_BASE64 }}
+        if: ${{ env.API_KEY_ID != '' }}
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$API_KEY_BASE64" | base64 --decode \
