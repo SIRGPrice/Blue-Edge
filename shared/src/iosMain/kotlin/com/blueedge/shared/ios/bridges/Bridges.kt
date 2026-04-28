@@ -1,7 +1,8 @@
 /*
  * Copyright 2026 Blue Edge contributors.
  *
- * Bridge protocols implemented by Swift on the iOS host (`iosApp/.../Bridges/*.swift`).
+ * Bridge protocols implemented by Swift on the iOS host
+ * (iosApp/BlueEdge/Bridges/Blue*Bridge.swift).
  *
  * This decoupling pattern keeps the `:shared` Gradle build platform-agnostic
  * (no `kotlin("native.cocoapods")` required, so Android contributors on
