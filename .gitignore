@@ -1,41 +1,22 @@
-# @license
-# Copyright 2025 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+﻿# ==============================================================================
+# Build / IDE / OS local state - never push.
 # ==============================================================================
 *.iml
-
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-**/build/
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-
-# Kotlin Multiplatform / Compose Multiplatform
+.gradle/
 .kotlin/
 kotlin-js-store/
-
-# iOS / Xcode (generated locally on macOS)
+local.properties
+.DS_Store
+Thumbs.db
+# Project / module build outputs.
+/build/
+**/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+# JetBrains / Android Studio local user state.
+.idea/
+# iOS / Xcode (generated locally on macOS).
 iosApp/Pods/
 iosApp/*.xcodeproj/
 iosApp/*.xcworkspace/
@@ -44,20 +25,26 @@ iosApp/build/
 xcuserdata/
 *.xcuserstate
 DerivedData/
-
-# Logs / crash dumps (developer-local, never to be pushed)
+# ==============================================================================
+# Logs / crash dumps (developer-local, never push).
+# ==============================================================================
 *.log
 full.log
 tombstone.txt
 app_crash_filtered.txt
 hs_err_pid*.log
-
-# Secrets — must never be committed
+# ==============================================================================
+# Secrets - must never be committed.
+# ==============================================================================
 *.keystore
 *.jks
 *.p12
 *.mobileprovision
 *.p8
+*.pem
+*.key
 ExportOptions.plist
 google-services.json
-
+GoogleService-Info.plist
+.env
+.env.*

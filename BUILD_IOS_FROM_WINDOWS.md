@@ -15,7 +15,7 @@ en runners `macos-14` de GitHub. Tú no tocas nada de macOS.
 Desde PowerShell en la raíz del proyecto:
 
 ```powershell
-cd C:\Users\tonch\Desktop\BlueEdge
+cd <ruta-local-al-repo>
 git init
 git add .
 git commit -m "BlueEdge iOS port scaffolding"

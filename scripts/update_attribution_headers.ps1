@@ -8,7 +8,7 @@
 # as required by the GitHub Terms of Service.
 # See the repository root: BLUE_EDGE_CUSTOM_LICENSE.md
 param(
-  [string]$Root = "C:\Users\tonch\Desktop\BlueEdge",
+  [string]$Root = (Split-Path -Parent $PSScriptRoot),
   [switch]$WhatIf
 )
 
