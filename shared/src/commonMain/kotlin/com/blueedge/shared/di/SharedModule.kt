@@ -32,6 +32,7 @@ import com.blueedge.shared.storage.provideSecureStorage
 import com.blueedge.shared.storage.provideSettings
 import com.blueedge.shared.ui.benchmark.BenchmarkRunner
 import com.blueedge.shared.ui.benchmark.BenchmarkViewModel
+import com.blueedge.shared.ui.home.HomeViewModel
 import com.blueedge.shared.ui.modelmanager.ModelManagerViewModel
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -50,6 +51,7 @@ val sharedCoreModule: Module = module {
   factory { ChatViewModel(settings = get()) }
   factory { BenchmarkViewModel(runner = get(), storage = get(), settings = get()) }
   factory { ModelManagerViewModel(storage = get(), engine = get(), settings = get(), importer = get()) }
+  factory { HomeViewModel() }
 }
 
 fun sharedModules(): List<Module> = listOf(sharedCoreModule)

@@ -190,6 +190,16 @@ Reutilización estimada de código: 70–85 %.
   con `HomeScreen`, `ChatRoute`, `ModelManagerScreen`, `BenchmarkScreen` y
   `BackScaffold`/`PlaceholderBody`. Reemplaza `GalleryNavGraph.kt`.
   Deps añadidas a `libs.versions.toml`: `voyager-navigator/transitions/screenmodel/koin` 1.1.0-beta03.
+- **HomeScreen real con catálogo de Tasks**: `BuiltInTasks.kt` (LLM_CHAT,
+  LLM_PROMPT_LAB, LLM_AGENT_CHAT + experimentales LLM_ASK_IMAGE/AUDIO/
+  TINY_GARDEN), `IconRegistry.iconFor()` mapeando `iconKey` →
+  Material Icons Extended, `HomeViewModel` (filtro por categoría + búsqueda
+  free-text) y `SharedHomeScreen` (TopAppBar con Models/Benchmark/Settings,
+  search field, FilterChips de categoría, grid adaptive de TaskTiles con
+  badges New/Experimental). `ChatRoute` ahora es `data class ChatRoute(taskId)`
+  que llama a `ChatViewModel.setTaskById()` para aplicar el `defaultSystemPrompt`
+  de la tarea elegida. Tasks experimentales muestran snackbar "coming soon".
+  Tests `BuiltInTasksTest` + `HomeViewModelTest` verdes.
 - `BlueEdgeApp` ahora monta `BlueEdgeTheme { Surface { RootNavigator() } }`.
 
 ### CI ✅

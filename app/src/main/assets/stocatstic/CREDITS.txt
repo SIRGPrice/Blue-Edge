@@ -1,3 +1,7 @@
-﻿Assets from Little Dreamyland by Starmixu and Utaskuas
+# Third-party notice preserved by Blue Edge.
+# This document records third-party asset authorship and license terms bundled with Blue Edge.
+# This file is not owned by SIRGPrice and is not relicensed by Blue Edge.
+# Original attribution and terms appear below.
+Assets from Little Dreamyland by Starmixu and Utaskuas
 https://starmixu.itch.io/little-dreamyland-asset-pack
 Licensed for commercial use. Redistribution of the pack itself is not permitted.

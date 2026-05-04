@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Minimal Info.plist for the BlueEdge iOS host app. The Xcode project that
-  references this file is generated on first checkout via `xcodegen` (see
-  iosApp/project.yml) so Windows contributors don't need a `.xcodeproj`
-  directory committed to source control.
+ Copyright 2026 SIRGPrice
+
+ This file is part of Blue Edge: https://github.com/SIRGPrice/Blue-Edge
+
+ Licensed under the Blue Edge Custom License 1.0.
+ You may not use this file except in compliance with that license.
+ GitHub may host, cache, display, and facilitate collaboration on this file
+ as required by the GitHub Terms of Service.
+ See the repository root: BLUE_EDGE_CUSTOM_LICENSE.md
 -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">

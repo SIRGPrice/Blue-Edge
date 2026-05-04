@@ -1,9 +1,12 @@
 /*
- * Copyright 2025 Google LLC
+ * Copyright 2025 Google LLC & Modifications Copyright 2026 SIRGPrice
+ *
+ * This file is part of Blue Edge: https://github.com/SIRGPrice/Blue-Edge,
+ * a heavily modified fork of Google AI Edge Gallery: https://github.com/google-ai-edge/gallery
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain a copy of the License at:
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -13,7 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.ai.edge.gallery.ui.common.tos
 
 import androidx.compose.foundation.layout.Arrangement
@@ -72,14 +74,19 @@ fun GemmaTermsOfUseDialog(
         Column(modifier = Modifier.verticalScroll(rememberScrollState()).weight(1f, fill = false)) {
           Text(
             buildAnnotatedString {
-              append("Gemma models on the Google AI Edge Gallery app are governed by the ")
+              append(
+                "Blue Edge is maintained by SIRGPrice and is a heavily modified fork based in part on Google AI Edge Gallery. "
+              )
+              append("Gemma models remain governed by the ")
               append(
                 buildTrackableUrlAnnotatedString(
                   url = "https://ai.google.dev/gemma/terms",
-                  linkText = "Gemma Terms of Service",
+                  linkText = "Google Gemma Terms of Use",
                 )
               )
-              append(". Please review these terms and ensure you agree before continuing.")
+              append(
+                ". Please review those upstream model terms and ensure you agree before downloading or using a Gemma model in Blue Edge."
+              )
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
