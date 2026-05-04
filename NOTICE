@@ -1,0 +1,21 @@
+Blue Edge
+Copyright 2026 SIRGPrice and Blue Edge contributors
+
+This project is a heavily modified derivative of Google AI Edge Gallery:
+https://github.com/google-ai-edge/gallery
+
+Google AI Edge Gallery was originally published by Google LLC under the
+Apache License, Version 2.0. Original upstream copyright and attribution
+notices are retained in source files where applicable.
+
+Additional modifications, integrations, UI changes, assets, and Blue Edge-
+specific components are copyright SIRGPrice and Blue Edge contributors.
+
+Files explicitly marked as licensed under the Blue Edge Custom License 1.0
+are governed by `BLUE_EDGE_CUSTOM_LICENSE.md`. Files that retain Apache-2.0
+or third-party notices continue to be governed by those original notices.
+
+Gemma, Google AI Edge Gallery, Google, and other third-party names, model
+terms, and services remain the property of their respective owners and are
+referenced for attribution, compatibility, and license compliance only.
+

@@ -1,11 +1,13 @@
 /*
- * Headless validator for tools/asset-regions/asset_regions.json.
+ * Copyright 2026 SIRGPrice
  *
- * Exit codes:
- *   0 → no errors (warnings printed to stdout, if any).
- *   1 → at least one error. Each issue printed to stderr.
+ * This file is part of Blue Edge: https://github.com/SIRGPrice/Blue-Edge
  *
- * Wired to the Gradle task:  ./gradlew :tools:asset-region-editor:validateRegions
+ * Licensed under the Blue Edge Custom License 1.0.
+ * You may not use this file except in compliance with that license.
+ * GitHub may host, cache, display, and facilitate collaboration on this file
+ * as required by the GitHub Terms of Service.
+ * See the repository root: BLUE_EDGE_CUSTOM_LICENSE.md
  */
 package com.blueedge.assettool.cli
 

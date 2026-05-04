@@ -12,17 +12,14 @@
  */
 package com.blueedge.shared.ui.navigation
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,7 +29,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -43,6 +39,8 @@ import com.blueedge.shared.ui.benchmark.BenchmarkViewModel
 import com.blueedge.shared.ui.benchmark.SharedBenchmarkScreen
 import com.blueedge.shared.ui.chat.ChatScreen as SharedChatScreen
 import com.blueedge.shared.ui.consent.ConsentScreen
+import com.blueedge.shared.ui.home.HomeViewModel
+import com.blueedge.shared.ui.home.SharedHomeScreen
 import com.blueedge.shared.ui.modelmanager.ModelManagerViewModel
 import com.blueedge.shared.ui.modelmanager.SharedModelManagerScreen
 import com.blueedge.shared.ui.settings.SettingsScreen as SharedSettingsScreen
@@ -75,8 +73,10 @@ object HomeScreen : Screen {
   @Composable
   override fun Content() {
     val navigator = LocalNavigator.currentOrThrow
-    HomeContent(
-      onOpenChat = { navigator.push(ChatRoute) },
+    val viewModel = remember { KoinPlatform.getKoin().get<HomeViewModel>() }
+    SharedHomeScreen(
+      viewModel = viewModel,
+      onOpenTask = { task -> navigator.push(ChatRoute(taskId = task.id)) },
       onOpenModelManager = { navigator.push(ModelManagerScreen) },
       onOpenBenchmark = { navigator.push(BenchmarkScreen) },
       onOpenSettings = { navigator.push(SettingsRoute) },
@@ -84,11 +84,15 @@ object HomeScreen : Screen {
   }
 }
 
-object ChatRoute : Screen {
+data class ChatRoute(val taskId: String = "") : Screen {
   @Composable
   override fun Content() {
     BackScaffold(title = "Chat") {
-      val viewModel = remember { KoinPlatform.getKoin().get<ChatViewModel>() }
+      val viewModel = remember(taskId) {
+        KoinPlatform.getKoin().get<ChatViewModel>().also { vm ->
+          if (taskId.isNotBlank()) vm.setTaskById(taskId)
+        }
+      }
       SharedChatScreen(viewModel = viewModel)
     }
   }
@@ -128,41 +132,6 @@ object SettingsRoute : Screen {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-@Composable
-private fun HomeContent(
-  onOpenChat: () -> Unit,
-  onOpenModelManager: () -> Unit,
-  onOpenBenchmark: () -> Unit,
-  onOpenSettings: () -> Unit,
-) {
-  Scaffold { padding ->
-    Column(
-      modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-    ) {
-      Text("Blue Edge", style = MaterialTheme.typography.headlineLarge)
-      Text(
-        "On-device AI",
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(bottom = 24.dp),
-      )
-      HomeAction("💬  Chat", onOpenChat)
-      HomeAction("📦  Models", onOpenModelManager)
-      HomeAction("📊  Benchmark", onOpenBenchmark)
-      HomeAction("⚙️  Settings", onOpenSettings)
-    }
-  }
-}
-
-@Composable
-private fun HomeAction(label: String, onClick: () -> Unit) {
-  androidx.compose.material3.Card(
-    onClick = onClick,
-    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-  ) {
-    Text(label, modifier = Modifier.padding(20.dp), style = MaterialTheme.typography.titleMedium)
-  }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

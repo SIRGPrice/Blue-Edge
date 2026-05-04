@@ -7,6 +7,8 @@
  */
 package com.blueedge.shared.chat
 
+import com.blueedge.shared.domain.Task
+import com.blueedge.shared.domain.findBuiltInTask
 import com.blueedge.shared.runtime.LlmEvent
 import com.blueedge.shared.runtime.LlmGenerationConfig
 import com.blueedge.shared.runtime.LlmModelDescriptor
@@ -35,6 +37,7 @@ data class ChatUiState(
   val isModelReady: Boolean = false,
   val isGenerating: Boolean = false,
   val errorMessage: String? = null,
+  val task: Task? = null,
 )
 
 class ChatViewModel(
@@ -47,6 +50,7 @@ class ChatViewModel(
   val state: StateFlow<ChatUiState> = _state.asStateFlow()
 
   private var generationJob: Job? = null
+  private var systemPrompt: String = ""
 
   init {
     // If a previous session loaded a model, hydrate the engine eagerly so
@@ -54,6 +58,31 @@ class ChatViewModel(
     settings?.lastLoadedModelPath
       ?.takeIf { it.isNotBlank() }
       ?.let { path -> loadModel(LlmModelDescriptor(modelPath = path)) }
+  }
+
+  /**
+   * Binds this view-model to a [Task]. Sets the default system prompt that
+   * will be prepended to subsequent generations. Calling this with a different
+   * task clears the conversation so the new prompt is honored from scratch.
+   */
+  fun setTask(task: Task) {
+    val current = _state.value.task
+    systemPrompt = task.defaultSystemPrompt
+    if (current?.id == task.id) {
+      _state.value = _state.value.copy(task = task)
+      return
+    }
+    generationJob?.cancel()
+    generationJob = null
+    _state.value = ChatUiState(
+      isModelReady = _state.value.isModelReady,
+      task = task,
+    )
+  }
+
+  /** Convenience overload: binds by built-in task id (no-op if unknown). */
+  fun setTaskById(id: String) {
+    findBuiltInTask(id)?.let(::setTask)
   }
 
   fun loadModel(descriptor: LlmModelDescriptor) {
@@ -80,9 +109,10 @@ class ChatViewModel(
       ChatMessage(Role.ASSISTANT, "", streaming = true)
     _state.value = _state.value.copy(messages = updated, isGenerating = true)
 
+    val effectivePrompt = if (systemPrompt.isNotBlank()) "$systemPrompt\n\n$prompt" else prompt
     generationJob = scope.launch {
       val sb = StringBuilder()
-      engine.generate(prompt, config).collect { event ->
+      engine.generate(effectivePrompt, config).collect { event ->
         when (event) {
           is LlmEvent.Token -> {
             sb.append(event.text)

@@ -1,15 +1,12 @@
-# Launcher for the official asset region editor desktop tool.
+# Copyright 2026 SIRGPrice
 #
-# Usage (from anywhere):
-#     .\scripts\install_stocatstic_assets.ps1
-#     .\scripts\install_stocatstic_assets.ps1 -Validate
+# This file is part of Blue Edge: https://github.com/SIRGPrice/Blue-Edge
 #
-# This script is intentionally thin — all logic lives in :tools:asset-region-editor.
-
-param(
-  [switch]$Validate
-)
-
+# Licensed under the Blue Edge Custom License 1.0.
+# You may not use this file except in compliance with that license.
+# GitHub may host, cache, display, and facilitate collaboration on this file
+# as required by the GitHub Terms of Service.
+# See the repository root: BLUE_EDGE_CUSTOM_LICENSE.md
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $repoRoot

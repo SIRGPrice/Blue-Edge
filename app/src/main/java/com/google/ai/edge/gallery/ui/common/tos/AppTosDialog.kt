@@ -1,9 +1,12 @@
 /*
- * Copyright 2026 Google LLC
+ * Copyright 2026 Google LLC & Modifications Copyright 2026 SIRGPrice
+ *
+ * This file is part of Blue Edge: https://github.com/SIRGPrice/Blue-Edge,
+ * a heavily modified fork of Google AI Edge Gallery: https://github.com/google-ai-edge/gallery
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain a copy of the License at:
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -13,7 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.ai.edge.gallery.ui.common.tos
 
 import androidx.compose.foundation.layout.Column
@@ -66,12 +68,13 @@ fun AppTosDialog(onTosAccepted: () -> Unit, viewingMode: Boolean = false) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState()).weight(1f, fill = false)) {
           // Short content.
           MarkdownText(
-            "By using this app, you agree to the " +
-              "[Google Terms of Service](https://policies.google.com/terms?hl=en-US).\n\n" +
-              "To learn what information we collect and why, how we use it, " +
-              "and how to review and update it, please review the " +
-              "[Google Privacy Policy](https://policies.google.com/privacy?hl=en-US).\n\n" +
-              "Your use of each model is subject to the applicable model license terms.",
+            "Blue Edge is a heavily modified app maintained by " +
+              "[SIRGPrice](https://github.com/SIRGPrice).\n\n" +
+              "It incorporates and derives from " +
+              "[Google AI Edge Gallery](https://github.com/google-ai-edge/gallery), " +
+              "originally published by Google LLC under the Apache License 2.0.\n\n" +
+              "Original upstream notices remain in the source tree and accompanying attribution files. " +
+              "Your use of each downloadable model remains subject to that model's own license and terms.",
             smallFontSize = true,
             textColor = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 16.dp),

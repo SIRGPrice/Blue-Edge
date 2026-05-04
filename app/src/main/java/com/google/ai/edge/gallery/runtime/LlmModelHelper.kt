@@ -1,9 +1,12 @@
 /*
- * Copyright 2026 Google LLC
+ * Copyright 2026 Google LLC & Modifications Copyright 2026 SIRGPrice
+ *
+ * This file is part of Blue Edge: https://github.com/SIRGPrice/Blue-Edge,
+ * a heavily modified fork of Google AI Edge Gallery: https://github.com/google-ai-edge/gallery
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain a copy of the License at:
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -13,7 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.ai.edge.gallery.runtime
 
 import android.content.Context

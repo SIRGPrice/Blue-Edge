@@ -1,11 +1,13 @@
 /*
- * Blue Edge — Asset Region Editor (desktop dev tool)
+ * Copyright 2026 SIRGPrice
  *
- * Official authoring tool for the `tools/asset-regions/asset_regions.json` catalogue that
- * feeds `AssetCatalogs.generated.kt` in the Android app. Kotlin + Swing with the FlatLaf dark
- * look-and-feel for a modern, professional appearance.
+ * This file is part of Blue Edge: https://github.com/SIRGPrice/Blue-Edge
  *
- * Run with:  ./gradlew :tools:asset-region-editor:run
+ * Licensed under the Blue Edge Custom License 1.0.
+ * You may not use this file except in compliance with that license.
+ * GitHub may host, cache, display, and facilitate collaboration on this file
+ * as required by the GitHub Terms of Service.
+ * See the repository root: BLUE_EDGE_CUSTOM_LICENSE.md
  */
 plugins {
   kotlin("jvm")

@@ -1,10 +1,8 @@
 /*
- * Copyright 2026 Blue Edge contributors.
- *
- * First-run consent screen — gates the rest of the navigator until both the
- * Blue Edge Terms of Service and the Gemma Terms of Use have been accepted.
- * The acceptance is persisted through [SettingsRepository] so the gate is
- * shown only once per install (and stays in sync with the Android app).
+ * Copyright 2026 SIRGPrice and Blue Edge contributors
+ * Part of Blue Edge, a heavily modified app fork based on Google AI Edge Gallery.
+ * Upstream project originally published by Google LLC:
+ * https://github.com/google-ai-edge/gallery
  */
 package com.blueedge.shared.ui.consent
 
@@ -55,9 +53,10 @@ fun ConsentScreen(
 
     ConsentBlock(
       title = "Blue Edge Terms of Service",
-      body = "Blue Edge runs models locally on your device. You are responsible " +
-        "for the prompts you submit and the content you generate. The app does " +
-        "not transmit prompts or generations to Blue Edge servers.",
+      body = "Blue Edge is maintained by SIRGPrice and is a heavily modified app " +
+        "based on Google AI Edge Gallery. It runs models locally on your device. " +
+        "Original upstream notices remain in the project under Apache 2.0, and " +
+        "you are responsible for the prompts you submit and the content you generate.",
       checked = tos,
       onCheckedChange = { tos = it },
       checkboxLabel = "I have read and accept the Blue Edge Terms of Service.",
@@ -65,13 +64,13 @@ fun ConsentScreen(
     Spacer(Modifier.height(20.dp))
     ConsentBlock(
       title = "Gemma Terms of Use",
-      body = "Some downloadable models (e.g., Gemma) are provided by third " +
-        "parties under their own license. Downloading and using a Gemma model " +
-        "implies you accept Google's Gemma Terms of Use available at " +
-        "ai.google.dev/gemma/terms.",
+      body = "Some downloadable models (for example Gemma) remain subject to the " +
+        "original upstream license terms from Google and other third parties. " +
+        "Downloading and using a Gemma model implies you accept the Google Gemma " +
+        "Terms of Use available at ai.google.dev/gemma/terms.",
       checked = gemma,
       onCheckedChange = { gemma = it },
-      checkboxLabel = "I accept the Gemma Terms of Use for any Gemma model I run.",
+      checkboxLabel = "I accept the Google Gemma Terms of Use for any Gemma model I run.",
     )
     Spacer(Modifier.height(32.dp))
 
