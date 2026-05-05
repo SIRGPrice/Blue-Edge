@@ -3,7 +3,7 @@
 Estado: **Fase 1 completada** + **Fase 2 al 80 % (sin Mac)** + **Fase 3 en curso (~94 %)**.
 
 Estrategia elegida: **Kotlin Multiplatform + Compose Multiplatform** (Opción A).
-Reutilización estimada de código: 70–85 %.
+Reutilización estimada de código: 85 %.
 
 **Invariante crítica garantizada y verificada localmente:**
 > `./gradlew :app:assembleDebug :shared:assembleDebug` → BUILD SUCCESSFUL
