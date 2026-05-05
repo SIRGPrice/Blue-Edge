@@ -11,9 +11,8 @@
 [![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4.svg)](https://developer.android.com/jetpack/compose)
 
 Blue Edge es un fork profundamente modificado de
-[Google AI Edge Gallery](https://github.com/google-ai-edge/gallery) centrado en
-ejecutar **modelos de lenguaje y multimodales en el dispositivo**, sin enviar
-datos a servidores remotos.
+[Google AI Edge Gallery](https://github.com/google-ai-edge/gallery) que reformula completamente la arquitectura de la app
+y la convierte en un framework local de chat agéntico multimodal y diseño de workflows automatizados.
 
 </div>
 
