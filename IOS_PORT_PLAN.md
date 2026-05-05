@@ -181,11 +181,6 @@ Reutilización estimada de código: 85 %.
   `clientId/authEndpoint/tokenEndpoint/redirectUri/scopes` y
   `defaultConfig()` para inyectar al `OAuthClient` desde la futura UI de
   descarga.
-- **Tests unitarios commonMain**: `SettingsRepositoryTest`,
-  `BenchmarkRunnerTest`, `BenchmarkViewModelTest`,
-  `ModelManagerViewModelTest`. Fakes (`FakeLlmEngine`, `FakeModelStorage`,
-  `FakeModelImporter`) e `InMemorySettings` en `shared/src/commonTest/`.
-  `:shared:testDebugUnitTest` ✅ verde.
 - **Navegación Voyager**: `shared/commonMain/ui/navigation/RootNavigator.kt`
   con `HomeScreen`, `ChatRoute`, `ModelManagerScreen`, `BenchmarkScreen` y
   `BackScaffold`/`PlaceholderBody`. Reemplaza `GalleryNavGraph.kt`.
@@ -257,4 +252,3 @@ Reutilización estimada de código: 85 %.
 | `androidx.security.crypto`        | **Keychain Services** (ya implementado)    | Estable  |
 | `pdfbox-android`                  | `PDFKit`                                   | Estable  |
 | `androidx.exifinterface`          | `ImageIO`                                  | Estable  |
-
