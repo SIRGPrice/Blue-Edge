@@ -92,8 +92,6 @@ kotlin {
 
     commonTest.dependencies {
       implementation(kotlin("test"))
-      implementation(libs.kotlinx.coroutines.test)
-      implementation(libs.multiplatform.settings)
     }
   }
 }
@@ -109,4 +107,3 @@ android {
     targetCompatibility = JavaVersion.VERSION_11
   }
 }
-
