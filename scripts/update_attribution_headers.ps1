@@ -6,7 +6,7 @@
 # You may not use this file except in compliance with that license.
 # GitHub may host, cache, display, and facilitate collaboration on this file
 # as required by the GitHub Terms of Service.
-# See the repository root: BLUE_EDGE_CUSTOM_LICENSE.md
+# See the repository root: LICENSE.md
 param(
   [string]$Root = (Split-Path -Parent $PSScriptRoot),
   [switch]$WhatIf
