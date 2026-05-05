@@ -1,6 +1,6 @@
 # Blue Edge Custom License 1.0
 
-Copyright (c) 2026 SIRGPrice and Blue Edge contributors.
+Copyright (c) 2026 SIRGPrice.
 
 ## Scope
 
