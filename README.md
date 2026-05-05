@@ -53,11 +53,8 @@ y la convierte en un framework local de chat agéntico multimodal y diseño de w
 ## 📜 Licencia y atribuciones
 
 - Código original de Google AI Edge Gallery: **Apache License 2.0**
-  (©Google LLC). Ver [`LICENSE`](LICENSE) y [`NOTICE`](NOTICE).
-- Modificaciones de Blue Edge: **Blue Edge Custom License 1.0**.
-  Ver [`BLUE_EDGE_CUSTOM_LICENSE.md`](BLUE_EDGE_CUSTOM_LICENSE.md).
-- Assets visuales del módulo *StoCATstic*: ver
-  [`app/src/main/assets/stocatstic/CREDITS.txt`](app/src/main/assets/stocatstic/CREDITS.txt).
+- Modificaciones de Blue Edge: (BLUE_EDGE_CUSTOM_LICENSE.md) (NOTICE.md)
+- Assets visuales del módulo *StoCATstic*: (app/src/main/assets/stocatstic/CREDITS.txt)
 
 ---
 
