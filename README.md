@@ -47,11 +47,9 @@ datos a servidores remotos.
 
 ## 🔐 Privacidad
 
-- **Cero telemetría.**
+- **Cero telemetría**
 - **Inferencia 100% local**
-- Los tokens OAuth se almacenan cifrados con
-  [`androidx.security.crypto`](https://developer.android.com/jetpack/androidx/releases/security)
-  (Android Keystore).
+- **No accede a internet**
 
 ## 📜 Licencia y atribuciones
 
