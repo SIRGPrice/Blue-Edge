@@ -2,61 +2,76 @@
 
 # Blue Edge
 
-**On-device generative AI playground for Android — and now iOS.**
+**On-device generative AI playground for Android — with an iOS port in progress.**
 
-[![License: Custom](https://img.shields.io/badge/license-Blue%20Edge%20Custom%201.0-2d6cdf.svg)](BLUE_EDGE_CUSTOM_LICENSE.md)
-[![Platform: Android](https://img.shields.io/badge/platform-Android%2012%2B-3DDC84.svg)](#requisitos)
-[![Platform: iOS](https://img.shields.io/badge/platform-iOS%2016%2B-000000.svg)](#requisitos)
+[![License: Custom](https://img.shields.io/badge/license-Blue%20Edge%20Custom%201.0-2d6cdf.svg)](LICENSE.md)
+[![Platform: Android](https://img.shields.io/badge/platform-Android%2012%2B-3DDC84.svg)](#requirements)
+[![Platform: iOS](https://img.shields.io/badge/platform-iOS%2016%2B-000000.svg)](#requirements)
 [![Kotlin](https://img.shields.io/badge/kotlin-multiplatform-7F52FF.svg)](https://kotlinlang.org/docs/multiplatform.html)
 [![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4.svg)](https://developer.android.com/jetpack/compose)
 
-Blue Edge es un fork profundamente modificado de
-[Google AI Edge Gallery](https://github.com/google-ai-edge/gallery) que reformula completamente la arquitectura de la app
-y la convierte en un framework local de chat agéntico multimodal y diseño de workflows automatizados.
+Blue Edge is a heavily modified fork of
+[Google AI Edge Gallery](https://github.com/google-ai-edge/gallery). It reshapes
+the app into a local multimodal agent-chat framework and workflow automation
+playground.
 
 </div>
 
 ---
 
-## ✨ Qué hace
+## ✨ What it does
 
-- **Chat agéntico 100 % on-device** con modelos descargados desde
-  Hugging Face.
-- **Multimodal**: prompts con imagen, audio (ASR) y voz en directo.
-- **Mobile Actions**: el LLM puede invocar acciones del teléfono (linterna,
-  contactos, calendario, mapa, mensajes…) mediante *tool calling* local.
-- **StoCATstic Assistant**: asistente reactivo con escena animada, capacidades
-  de notificación, accesibilidad, SMS y llamadas.
-- **Agent Chat & RAG**: documentos permanentes, chunking, búsqueda y
-  *retrieval augmented generation* totalmente local.
-- **Benchmarks integrados** de tokens/seg, latencia y memoria por acelerador
-  (CPU / GPU / NPU / AICore).
-- **iOS port (en curso)**: app SwiftUI nativa que comparte motor con Android
-  vía un módulo Kotlin Multiplatform.
+- **100% on-device agent chat** with models downloaded from Hugging Face.
+- **Multimodal prompts** with images, audio transcription, and live voice.
+- **Mobile Actions** so the LLM can call local phone tools such as flashlight,
+  contacts, calendar, maps, and messages.
+- **StoCATstic Assistant**, a reactive animated assistant with notification,
+  accessibility, SMS, and call capabilities.
+- **Agent Chat + RAG** with persistent documents, chunking, local search, and
+  retrieval-augmented generation.
+- **Built-in benchmarks** for tokens per second, latency, and memory by
+  accelerator (CPU / GPU / NPU / AICore).
+- **iOS port in progress** through a native SwiftUI host app that shares the
+  engine through Kotlin Multiplatform.
 
-## 🚀 Empezar (Android)
+## 🚀 Get started on Android
 
--Descarga el archivo apk en el móvil y ábrelo.
+Download the APK from the
+[latest release](https://github.com/SIRGPrice/Blue-Edge/releases/latest), copy it
+to your phone, and open it to install.
 
-### Requisitos
+### Requirements
 
 - **Android 12+**
-- 6 GB de RAM disponibles dedicados solo para la app.
-- 6 GB de espacio libre en el almacenamiento.
+- 6 GB of RAM available for the app.
+- 6 GB of free storage.
+- iOS 16+ for the experimental iOS host app.
 
-## 🔐 Privacidad
+## 🔐 Privacy
 
-- **Cero telemetría**
-- **Inferencia 100% local**
-- **No accede a internet**
+- **No telemetry**
+- **100% local inference**
+- **No internet access unless you explicitly download models**
 
-## 📜 Licencia y atribuciones
+## 💙 Sponsoring
 
-- Código original de Google AI Edge Gallery: **Apache License 2.0**
-- Modificaciones de Blue Edge: (BLUE_EDGE_CUSTOM_LICENSE.md) (NOTICE.md)
-- Assets visuales del módulo *StoCATstic*: (app/src/main/assets/stocatstic/CREDITS.txt)
+If Blue Edge is useful to you, consider supporting ongoing development through
+[GitHub Sponsors](https://github.com/sponsors/SIRGPrice). Sponsorship helps fund
+testing devices, model experimentation, and maintenance.
+
+## 📜 License and attributions
+
+- Original Google AI Edge Gallery code: **Apache License 2.0**.
+- Blue Edge-marked modifications: [Blue Edge Custom License 1.0](LICENSE.md).
+- Project notices: [NOTICE](NOTICE).
+- StoCATstic visual asset credits:
+  [`app/src/main/assets/stocatstic/CREDITS.txt`](app/src/main/assets/stocatstic/CREDITS.txt).
+
+Only files explicitly marked as Blue Edge-owned are governed by
+[LICENSE.md](LICENSE.md). Files that retain upstream or third-party notices keep
+their original terms.
 
 ---
 
-<sub>Hecho por Ingenieros 🩵</sub>
+<sub>Made by engineers 🩵</sub>
 
